@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio WorkingVersion="6.7" FileVersion="4.9"?>
+<Hardware xmlns="http://br-automation.co.at/AS/Hardware">
+  <Module Name="5APC4100.BX01-000" Type="5APC4100.BX01-000" Version="1.0.0.0">
+    <Connection Connector="SY" TargetModule="5APC4100_TGL4_000" TargetConnector="SY3" />
+  </Module>
+  <Module Name="5APC4100_TGL4_000" Type="5APC4100.TGL4-000" Version="1.4.0.0">
+    <Connector Name="IF3">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+      <Parameter ID="ActivateDevice" Value="1" />
+    </Connector>
+    <Connector Name="IF4">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+      <Parameter ID="ActivateDevice" Value="0" />
+    </Connector>
+    <Connector Name="IF5">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+      <Parameter ID="ActivateDevice" Value="1" />
+    </Connector>
+    <Connector Name="IF6">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+      <Parameter ID="ActivateDevice" Value="1" />
+    </Connector>
+    <Connector Name="IF7">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+    </Connector>
+    <Connector Name="IF8">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+    </Connector>
+    <Connector Name="IF9">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+    </Connector>
+    <Connector Name="IF10">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+    </Connector>
+    <Connector Name="IF11">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+    </Connector>
+    <Connector Name="IF12">
+      <Parameter ID="AssignedOperatingSystem" Value="ARemb" />
+    </Connector>
+    <Parameter ID="ConfigurationID" Value="Demo_APC" />
+    <Parameter ID="Simulation" Value="1" />
+    <Parameter ID="TimerDeviceType" Value="EPLX2X" />
+    <Parameter ID="TimerDevice" Value="5LS182.6-2.IF1" />
+    <Parameter ID="TaskClassIdleTime" Value="800" />
+    <Parameter ID="Cyclic1Duration" Value="800" />
+    <Parameter ID="Cyclic1Tolerance" Value="0" />
+    <Parameter ID="Cyclic3Duration" Value="49600" />
+    <Parameter ID="Cyclic3Tolerance" Value="49600" />
+    <Parameter ID="Cyclic8Duration" Value="9600" />
+    <Group ID="FileDevice1" />
+    <Parameter ID="FileDeviceName1" Value="SvgData" />
+    <Parameter ID="FileDevicePath1" Value="USER_PATH" />
+    <Parameter ID="TimeZone" Value="140" />
+    <Parameter ID="ActivateDaylightSavingTime" Value="1" />
+    <Parameter ID="ActivateFtpServer" Value="1" />
+    <Parameter ID="FTPProtocol" Value="2" />
+    <Group ID="FtpUser1" />
+    <Parameter ID="FtpUsername1" Value="Admin" />
+    <Parameter ID="FtpUserPassword1" Value="N9UgzK2s93YdMH1WLKJGMUQj6auAxdde3r/bnmMSGqo=" Description="Admin" />
+    <Parameter ID="FtpUserSalt1" Value="a78G81LM" />
+    <Parameter ID="FTPAccessRight1" Value="0" />
+    <Parameter ID="ActivateWebServer" Value="1" />
+    <Parameter ID="WebServerProtocol" Value="3" />
+    <Parameter ID="ActivateSdm" Value="1" />
+  </Module>
+  <Module Name="5LS182.6-2" Type="5LS182.6-2" Version="1.14.0.0">
+    <Connection Connector="PLK2" TargetModule="epl_icn" TargetConnector="PLK1">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Connection Connector="SL" TargetModule="5APC4100.BX01-000" TargetConnector="SL1" />
+    <Connector Name="IF1">
+      <Parameter ID="CycleTime" Value="800" />
+      <Parameter ID="EplNatSubnet" Value="192.168.102.0" />
+    </Connector>
+  </Module>
+  <Module Name="8F1I01.AA66.xxxx-1b" Type="8F1I01.AA66.xxxx-1" Version="1.0.1.0" NodeNumber="16">
+    <Connection Connector="PLK1" TargetModule="8F1I01.AA66.xxxx-1c" TargetConnector="PLK2">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Parameter ID="SegmentReference" Location="DriveConfiguration/Segment" Value="Seg_04" />
+  </Module>
+  <Module Name="8F1I01.AA66.xxxx-1c" Type="8F1I01.AA66.xxxx-1" Version="1.0.1.0" NodeNumber="15">
+    <Connection Connector="PLK1" TargetModule="8F1I01.AA66.xxxx-1d" TargetConnector="PLK2">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Connection Connector="PLK2" TargetModule="8F1I01.AA66.xxxx-1b" TargetConnector="PLK1">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Parameter ID="SegmentReference" Location="DriveConfiguration/Segment" Value="Seg_03" />
+  </Module>
+  <Module Name="8F1I01.AA66.xxxx-1d" Type="8F1I01.AA66.xxxx-1" Version="1.0.1.0" NodeNumber="14">
+    <Connection Connector="PLK1" TargetModule="8F1I01.AA66.xxxx-1e" TargetConnector="PLK2">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Connection Connector="PLK2" TargetModule="8F1I01.AA66.xxxx-1c" TargetConnector="PLK1">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Connection Connector="PLK3" TargetModule="5LS182.6-2" TargetConnector="IF1">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Parameter ID="SegmentReference" Location="DriveConfiguration/Segment" Value="Seg_02" />
+    <Parameter ID="Appearance" Location="DriveConfiguration/Segment" Value="Virtual" />
+  </Module>
+  <Module Name="8F1I01.AA66.xxxx-1e" Type="8F1I01.AA66.xxxx-1" Version="1.0.1.0" NodeNumber="13">
+    <Connection Connector="PLK2" TargetModule="8F1I01.AA66.xxxx-1d" TargetConnector="PLK1">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Parameter ID="SegmentReference" Location="DriveConfiguration/Segment" Value="Seg_01" />
+    <Parameter ID="Appearance" Location="DriveConfiguration/Segment" Value="Virtual" />
+  </Module>
+  <Module Name="epl_icn" Type="epl_icn" Version="1.3.5.0" NodeNumber="67">
+    <Connection Connector="PLK1" TargetModule="5LS182.6-2" TargetConnector="PLK2">
+      <Cable Type="PowerlinkCable" Length="10" Version="1.0.0.3" />
+    </Connection>
+    <Parameter ID="RefConfiguration" Value="Receive" />
+    <Parameter ID="RefInterface" Value="5LS182.6-2.IF1" />
+  </Module>
+</Hardware>

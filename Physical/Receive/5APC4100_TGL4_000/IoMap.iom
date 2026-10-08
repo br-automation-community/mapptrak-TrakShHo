@@ -1,0 +1,5 @@
+VAR_CONFIG
+	::Receive:HandoverDataFromSend AT %IO."5LS182.6-2".IF1.ToReceive;
+	::Receive:HandoverDataToSend AT %QO."5LS182.6-2".IF1.ToSend;
+	::Receive:Enable AT %QX."5LS182.6-2".IF1.Enable;
+END_VAR

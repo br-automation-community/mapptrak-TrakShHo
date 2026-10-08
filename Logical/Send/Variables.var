@@ -1,0 +1,7 @@
+VAR
+	fbAsmSendShuttleDelete : TSH_AsmSendShuttleDelete;
+	Config : TshConfigSendType;
+	HandoverDataFromReceive : TshCommReceiveToSendType;
+	HandoverDataToReceive : ARRAY[0..15] OF BYTE;
+	Enable : BOOL;
+END_VAR

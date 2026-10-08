@@ -1,0 +1,454 @@
+-----------------------------------------------------------------------------------------------------------
+Versioning:
+
+V X.XX.X
+  | || |
+  | || `--- 0...8 	Guaranteed compatible changes (e.g. small bug fixes).
+  |	||		9		Test version, only for unofficial test purposes.
+  | ||
+  | |`----- 0...9	Guaranteed compatible changes (e.g. small bug fixes, functional extensions).
+  | |
+  | `------ 0...9	Changes may be incompatible (Please read release information).
+  |
+  `-------- 0		Versions prior to first official release.
+  			1...9	Changes may be incompatible (Please read release information).
+
+-----------------------------------------------------------------------------------------------------------	
+-----------------------------------------------------------------------------------------------------------	
+
+Revision Information:
+
+-----------------------------------------------------------------------------------------------------------
+O	V6.00.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V6.8.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 4m/s. Correct functionality with higher velocity cannot be guaranteed
+	- Distribution with MIT license file
+	- This version introduces the Catch-based handover, eliminating the need for a dual track area
+	
+	Interface changes:
+	
+	- TSH-I#0020: New ProcessPoints structure: ProcessPoint_GetData and ProcessPoint_DeleteShuttle are now required on the sending side
+	- TSH-I#0021: New parameter "CatchPosition" in the parameter structure of TSH_AsmReceiveShuttleAdd to define where shuttles are caught
+	- TSH-I#0022: Updated POWERLINK communication data size constants
+	
+	New Functionality:
+	
+	- TSH-I#0020: Handover is now performed using the Catch functionality of mapp Motion, enabling shuttle transfer without a physical dual track area
+	- TSH-I#0021: Shuttles are automatically "caught" at the CatchPosition when entering the overlapping segment area
+	- TSH-I#0022: The function block MC_BR_SecAddShuttle_AcpTrak runs continuously in catch mode to detect incoming shuttles
+	
+	Internal Changes:
+	
+	- Updated POWERLINK communication buffer sizes
+	- Removed support for handover mode "Standstill with direction change" (tshHANDOVER_STANDSTILL_CHANGE_DIR)
+	- Simplified handover process by utilizing mapp Motion catch functionality
+
+-----------------------------------------------------------------------------------------------------------
+O	V2.21.1:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.19.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	- Distribution with MIT license file
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0017, so the communication monitoring is based on counter instead of a timer. This prevents the monitoring to trigger an error at low monitoring times
+	- Fixed TSH-B#0018, so the recovery doesn't get stuck if one of the sequence commands gets aborted
+	- Fixed TSH-B#0015, so the validity check for shuttles in the safety zone takes care of the shuttle size
+
+	Interface changes:
+	
+	- TSH-I#0015: The parameter structure of "TSH_AsmReceiveShuttleAdd" has now a mode input to enable the auto pause feature
+	
+	New Functionality:
+	
+	- TSH-I#0015: The function block "TSH_AsmReceiveShuttleAdd" can now trigger the pause functionality automatically if the number of shuttles on the sector exceeds the calculated maximum
+	- TSH-I#0016: In the recovery section of the info structure there is a new element "RecoveryBlocked", which is set to TRUE in case a shuttle can't reach the desired position during recovery. 
+	  The datapoint is only for information and recovery continues once the shuttle can move again.
+	
+	Internal Changes:
+	
+	- Moved the description of each action to the right place so its shown also in the AS project tree
+	- Removed constant "tshCOMMUNICATION_TIMEOUT"
+	- Renamed constant "tshRESPONSE_TIMEOUT_CYCLES" to "tshCOMMUNICATION_TIMEOUT_CYCLES" as it takes care now of communication and response timeout
+	- Recovery sequence "TSH_RecoverySeq_CheckShuttleStandstill" now specifically checks for shuttle state "mcAXIS_DISCRETE_MOTION" to check if the shuttle is behind the barrier
+	- New constant "tshAUTO_PAUSE_SYSTEM_OFFSET" needed for the system calculation of the auto pause feature
+
+-----------------------------------------------------------------------------------------------------------
+O	V2.20.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.19.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	- Distribution with MIT license file
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0014, so the version can be used with mappMotion 5.23 onwards, as the datatype of ShuttleID was changed to UDINT from UINT.
+	- Fixed TSH-B#0015, so shuttles located in the "SafetyDistance" after the AsmSend on AsmReceive are now handled in ZoneReceive.
+	- Fixed TSH-B#0016, so the handover area monitoring is only active in the needed states and timeframe to prevent spamming the motion logger and extar CPU load.
+
+	Interface changes:
+	
+	- TSH-B#0014: Datatype of ShuttleID is now UDINT instead of UINT (Compatible with older Versions due to implicit conversion)
+	- TSH-I#0009: Added input "PauseHandover" to implement a new feature to close the barrier and stop shuttles from entering the handover
+	- TSH-I#0009: Added output "HandoverPaused" to show an according status of the "PauseHandover" input
+	
+	Internal Changes:
+	
+	- TSH-I#0012: Error detection during handover has been improved to also check the current shuttle to be disabled on the receiving side
+
+-----------------------------------------------------------------------------------------------------------
+O	V2.10.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.19.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	- Distribution with MIT license file
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0012, so the recovery doesn't get stuck if the input "StartRecovery" is reset before the done
+	- Fixed TSH-B#0013, so the recovery doesn't fail if the resize of shuttles is disabled
+
+	Interface changes:
+	
+	- TSH-I#0011: Added input "Segment" to also monitor the segment directly located at the handover position -> Error and recovery monitoring
+	
+	Internal Changes:
+	
+	- TSH-I#0011: Output "RecoveryNeeded" is now only set if recovery is needed and also possible
+	- TSH-I#0002: Implemented improved position compensation, taking also acceleration into consideration
+
+-----------------------------------------------------------------------------------------------------------
+O	V2.00.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.19.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	- Distribution with MIT license file
+	
+	Bugfixes:
+	
+	- Closed TSH-I#0003 due to an implemented Bugfix by mapp Motion
+	
+	Internal Changes:
+	
+	- Implemented TSH-I#0005 and added a MIT license file to the library
+	- Implemented TSH-I#0001 and exchanged the old "MC_BR_SecAddShuttle_AcpTrak" with the new "MC_BR_SecAddShWithMov_AcpTrak" because of CTV issues in special cases.
+	- Renamed "tshCOMPENSATION_OFFSET" to "tshCOMPENSATION_SYSTEM_CYCLES",as this cycles are needed for function block calls
+
+-----------------------------------------------------------------------------------------------------------
+O	V1.21.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	
+	Bugfixes:
+	
+	- Fixed the bug, where PLC went into SERVICE after disabling TSH_AsmReceiveShuttleAdd without a DataSend Buffer variable assigned (address = 0)
+
+	Interface changes:
+	
+	- Added element "HandoverName" to the configuration.
+	- Added element "LogbookType" to the configuration to select system user logbook or specific logbook
+	- Added element "LogbookName" to the configuraiton to define the name for the specific logbook
+	
+	New Functionality:
+	
+	- TSH-I#0010: The HandoverName willl be used in the logger to distinguish between multiple instances. If empty, the function block name will be used (e.g. TSH_AsmSendShuttleDelete)
+	- TSH-I#0010: The userdefined logbook gives the possibility to create seperate logbooks for each handover. If not existing, the logbook will be created as "PERSIST" with a size of 200kB. The user can create the logbook upfront.
+	
+	Internal Changes:
+	
+	- Copying the configuration values happens now in separate action at the beginning of the initialization of the fub (needed for new logging)
+
+-----------------------------------------------------------------------------------------------------------
+O	V1.20.3:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0009, so the recovery doesn't get stuck anymore in Zone handover due to never reach the assignment of the next step
+	- Fixed TSH-B#0010, so the update is not triggered during initialization and update in state error does not reset the error output
+
+	Interface changes:
+	
+	- Added "EnableResize" to "TshAsmReceiveParShuttleSizeType" in order to enable / disable the shuttle resize on "TSH_AsmReceiveShuttleAdd" after adding a shuttle
+	
+	New Functionality:
+	
+	- Shuttle resize can be enabled / disabled on "TSH_AsmReceiveShuttleAdd" - Default is "tshSHUTTLE_RESIZE_DISABLE"
+	
+	Internal Changes:
+	
+	- Changed the description for inputs "DataReceive", "DataSendAddress", "DataReceiveAddress" and "DataSend" to reduce confusion
+	- ProcessStatus.12 and ProcessStatus.13 got merged into ProcessStatus.12, as only information about Shuttle errorstop is sufficient
+	- ProcessStatus.3 got removed, as data is not needed anymore
+	- Removed "fbSecGetShuttleInError" due to "fbSecReadInfo" is enough
+	- Action "TSH_CheckForShuttles" got modified and is only relying on information from "ProcessStatus.15" ("NoShuttlesOnSector")
+	- "Process.fbSecGetShuttleSel" only gets used if needed during recovery or in mode "tshHANDOVER_STANDSTILL" in FB "TSH_AsmReceiveShuttleAdd" to check if handover area is clear
+
+-----------------------------------------------------------------------------------------------------------
+O	V1.10.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+
+	Interface changes:
+	
+	- Added new input "UserDataAddress" to "TSH_AsmSendShuttleDelete" and "TSH_AsmReceiveShuttleAdd"
+	
+	New Functionality:
+	
+	- If a variable is assigned to the input "UserDataAddress", the user data of the deleted / added shuttle will be copied to this buffer
+	
+	Internal Changes:
+	
+	- Reduced "tshCOMPENSATION_OFFSET" from 2 to 1, as with new tests, the compensation was ahead by 1 cycle
+
+-----------------------------------------------------------------------------------------------------------
+O	V1.00.3:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0006, so when there are just Shuttles on AsmSend and recovery is needed, AsmReceive will detect this situation in state "RUNNING"
+	
+	Internal Changes:
+	
+	- Fixed a logger entry message in "TSH_AsmReceive_ErrorReaction", where "Assembly Send" was used instead of "Assembly Receive"
+
+-----------------------------------------------------------------------------------------------------------
+O	V1.00.2:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0007, so when using brmemcpy(), the right size is copied to send the correct Userdata
+	- Fixed TSH-B#0008, so the process point on "AsmSend" is deactivated during recovery to not create events during recovery
+
+-----------------------------------------------------------------------------------------------------------
+O	V1.00.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed
+	- First official release
+	
+	Bugfixes:
+	
+	- Fixed TSH-B#0004, so it is checked, if the sector "Receive" is long enough for the handover with the parameterised shuttle size
+
+-----------------------------------------------------------------------------------------------------------
+O	V0.50.9:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed.
+	
+	Bugfixes:
+	
+	- Fixed some logger messages in recovery sequences
+	- Fixed the problem, that logger entries of the barrier interfeared with the logger messages of the assembly error reaction (moved the barrier handling)
+	- Fixed the problem, that a shuttle in Zone "Send" was not deleted, when there were no shuttles in Zone "Receive" (Bug in Recovery Sequence "GetShuttle" was fixed)
+	- Fixed a problem, that a function block got directly an error after successful recovery (Bug when TSH_CheckResponseTimout was hitting the error -> Process step wasn't reset)
+	- Fixed a problem, where the recovery was aborted with an error, as MC_BR_ShReadInfo was not reset and used an invalid shuttle reference (Reset function block in "On Hold")
+	- Fixed a problem, where the process stopped with an error after recovery, as MC_Reset was not reset and used an invalid shuttle reference (Reset function block in "On Hold")
+	- Fixed a problem, where the process stopped with an error. ProcessStep was not reset, when it was put "on hold" (Reset variable in "On Hold") 
+	- Fixed a problem, where the recovery was aborted, as 2 shuttles moved to close (Implemented velocity check between config and parameter to use smallest)
+
+	Interface changes:
+	
+	- tshTO_SENDER_BUFFER_SIZE changed from 27 to 31 (communicate velocity (REAL) of parameter to sender to prevent to fast handover in recovery)
+	 
+	Internal changes:
+
+	- New recovery sequence "StopShuttle" to abort any active movement before starting new recovery movements
+	- The value all StatusIDs have been changed and documented. Their description was adapted
+	- Renewed the TSH_Texts.br file with the actual text data
+	- Internal.Recovery.fbErrorCheckTimer.IN is reset cyclically before the error check to reset the input if the error is gone
+	- TSH_InitializeLogbook is now setting the diagnosis info output diagnosis in case of an error (StatusID = tshERR_INTERNAL)
+	- TSH_WriteLoggerEntry is now setting the diagnosis info output diagnosis in case of an error (StatusID = tshERR_INTERNAL)
+
+-----------------------------------------------------------------------------------------------------------
+O	V0.40.9:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed.
+	
+	Bugfixes:
+	
+	- Position compensition and shuttle velocity are now taking the "Sign correction" into consideration
+	- Shuttle was always added with initial velocity in simulation mode => Changed to 0.0 for mode "Standstill"
+	- Output "Info" was not resetted properly when function blocks were disabled
+	- On FB Receive, there was never searched for shuttles in error stop in the handover zone -> Function block was not called
+
+	Interface changes:
+	
+	- Added Element "RecoveryFailed" to the info output structure
+	- tshTO_RECEIVER_BUFFER_SIZE changed from 51 to 59. This value change was necessary for recovery
+	- tshTO_SENDER_BUFFER_SIZE changed from 19 to 27. This value change was necessary for recovery
+	- Added "StandstillMoveDir" to the configuration in order to distinguish between the 2 movement directions in handover mode "standstill"
+	  This is needed for recovery, when shuttle positions are compared between the two assemblies
+	
+	New Functionality:
+	
+	- Recovery for Zone "Receive" implemented  
+	- Recovery for Zone "Handover" implemented  
+	 -> Scenario "No Shuttles in Zone"
+	 -> Scenario "Only shuttles on Asm Receive" 
+	 -> Scenario "Only one shuttle on Asm Send"   
+	 -> Scenario "Only shuttles on Asm Send"   
+	 -> Scenario "Shuttles on Both Asm"  
+	- Recovery for Zone "Send" implemented                                                               
+	
+	Internal changes:
+
+	- New constant tshRECOVERY_DISTANCE_TOLERANCE to compare shuttle positions in a certain window
+	- Freed up again one bit in the "TO_SENDER" process status communication
+	- Added the new "StandstillMoveDir" also to the communication to compare the values
+	- According to the handover mode and the movement direction a "Sign correction" is calculated (-1 or +1)
+	- New constant tshSWITCH_AREA_STANDSTILL to define the area, where shuttles might be able to switch sides in mode Standstill - Change direction
+	- New constant tshRECOVERY_CHECK_TIME in order to check, if a shuttle is waiting in front of the barrier, or it moves over it
+	- New constant tshDISTANCE_SEG_END in order to prevent asymmetric load on the segments
+	- Errors during recovery are now checked as well and communicated to the other assembly
+	
+-----------------------------------------------------------------------------------------------------------
+O	V0.30.9:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 2m/s. Correct functionality with higher velocity cannot be guaranteed.
+	
+	Bugfixes:
+	
+	- Bit 7 for Communication Timeout Check was not set in AssemblySend due to an error in the IF
+	- Changed the behavior of the "Info" output. Data is set to "Internal.Info" and copied cyclically now to the "Info" output.
+	- Added a compensation offset of 2 cycles, which is needed for the current implementation with SecAddShuttle() due to the
+	  behavior of the function block. Reduces the lag error when adding a shuttle.
+	- "CheckCommonConfig" gives now a logger entry for each faulty configuration value, not just the first => Faster diagnosis
+	- "AsmReceive_CheckParameter" gives now a logger entry for each faulty parameter value, not just the first => Faster diagnosis
+	- State "Recovery" in AsmReceiveShuttleAdd was reworked to look the same as in AsmSendShuttleDelete -> No Recovering yet!
+	- System check for transfer area length got a tolerance of 1�m on top on the sector length to overcome rounding errors with REAL
+	- Reworked the error reaction for monitoring shuttle states -> No wrong triggering in Mode "Standstill" anymore
+	- Reworked adding tickets to a barrier, that maximum the number of given tickets lowered by the number of available tickets can be added 
+	  (It happened sometimes, that the tickets were added 2 times in a row, which resulted in wrong behaviour in mode "Standstill")
+	- In mode "Standstill", the acknowledge, that the shuttle left the handover zone was never set to true
+	- In mode "Standstill", the handover had old data, when the shuttle passed the trigger point
+	  Now the actual data is read out when the movement to the handover point is done
+	- In mode "Standstill" with simulation mode "Just Routing", the shuttle "handed over" to the other side was still recognized as standstill and triggered an error
+	  This is now prevented in this situation to have at least 2 Shuttles in standstill to trigger this error
+	- Implemented a transit point at the end of the "Sector Receive" in order to have Starting direction = Undefined
+	  This is especially needed in "Volcano" Handovers in mode "Standstill" with simulation mode "Just Routing"
+
+	Interface changes:
+	
+	- On "TSH_AsmReceiveShuttleAdd" added the input "SimAddShuttle" to add shuttles in simulation mode "STANDALONE"
+	- Element "Simulation" added to the configuration structure
+	- Element "Simulation" added to the info output structure 
+	- Element "LibraryInfo" added to the info output structure
+	- tshTO_RECEIVER_BUFFER_SIZE changed from 47 to 51. This change was necessary for simulation mode "Just Routing"
+	
+	New Functionality:
+	
+	- Added Simulation functionality to the function blocks
+	- Simulation mode "Standalone" for ARsim and SimOnPLC implemented
+	  Shuttles are added with initial velocity equal to the velocity in the parameter structure
+	  Communication interface is simulated internal
+	  (Restriction: Just one shuttle can be inside the handover zone at the time, which results in higher shuttle distance)
+	- Simulation mode "Just Routing" for ARsim implemented
+	  The shuttle refence is sent to "function block receive" to start the movement
+	  New step in "function block send" implemented "tshAS_SIM_PREPARE_ROUTING"
+	  Process is the same as in normal operation, just without "adding" and "deleting" the shuttle, as well as changing the user data
+	- The current library version and used motion version are now shown in the info output structure
+	- Added additional debug logger entries in the error reactions (Find the error, which was detected, although it didn't cause a stop)
+
+-----------------------------------------------------------------------------------------------------------
+O	V0.20.9:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- Cycle time must be between 0.8 and 2ms
+	
+	Bugfixes:
+	
+	- Automatic restart of handover only when no recovery needed and no error is detected
+	- Shuttle is no longer stopped on "Assembly Send", when it's already added to "Assembly Receive"
+	- Info output structure also reseted after automatic restart
+	- Removed "HandoverReady = TRUE" from Process state "Check Trigger", so Shuttles are processed also when the handover is not ready anymore
+	  This is needed to have a controlled stop of the handover.
+	- Shuttles in standstill are just counted on AsmReceive, when the process is not adding a shuttle in that moment (Issue in SecAddShuttle FUB)
+
+	Interface changes:
+	
+	- Element "Diagnose" in Info output structure renamed to "Diagnosis"
+	- Element "Reaction" removed from "Diagnosis" in Info output structure
+	- Element "RecoveryIdle" added to "Recovery" in the Info output structure
+	- Element "RecoveryActive" added to "Recovery" in the Info output structure
+	- Element "HandoverCount" added to the Info output structure
+	
+	New Functionality:
+	
+	- Error reactions redone
+	- RecoveryNeeded now communicated between the assemblies as a status bit
+	- The handover is cancelled, when Assembly Receive goes to error instead of waiting for the timeout of the response
+	- ResponseCheck timer no resetted in "On Hold" and in "Error"
+	- Improved autorestart (Error reaction "AsmReceive on hold" is surpressed for the auto restart phase)
+
+-----------------------------------------------------------------------------------------------------------
+O	V0.10.9:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V5.13.0
+	- First pre-release of the library
+	- No recovery implemented yet => if recovery is needed, then shuttles have to be moved by hand or deleted in simulation
+	- Error detection has known issues and will be reworked
+	- Logging will be improved (multiple logs possible)
+	- Cycle time must be between 0.8 and 2ms
+	- Simulation mode not implemented yet (If CPU is ArSim)

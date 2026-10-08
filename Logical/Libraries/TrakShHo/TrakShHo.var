@@ -1,0 +1,17 @@
+(*CONSTANTS*)
+VAR CONSTANT
+	tshTO_SENDER_BUFFER_SIZE : USINT := 27; (*Fixed size of the communication buffer from the receiver to the sender (Value +1 = Size in Byte)*)
+	tshTO_RECEIVER_BUFFER_SIZE : USINT := 15; (*Fixed size of the communication buffer from the sender to the receiver, without the userdata (Value +1 = Size in Byte)*)
+	tshCOMMUNICATION_TIMEOUT_CYCLES : USINT := 255; (*Number of cycles, after the function block gives an error, when the communication is interrupted.*)
+	tshMAXIMUM_CYCLE_TIME : UDINT := 2000; (*Slowest possible cycle time, the handover might be still working [µs]*)
+	tshVELOCITY_LIMIT : REAL := 4.0; (*Maximum velocity allowed for the system (=> user manual)*)
+	tshACCELERATION_LIMIT : REAL := 40.0; (*Maximum acceleration allowed for the system (=> user manual)*)
+	tshDECELERATION_LIMIT : REAL := 40.0; (*Maximum deceleration allowed for the system (=> user manual)*)
+	tshHANDOVER_ZONE_SAFETY_FACTOR : REAL := 1.2; (*Safety factor for braking distance calculation*)
+	tshERROR_CHECK_TIME : TIME := T#500ms; (*Time, no shuttle is in the process of the handover in order to stop all oncoming shuttles in case of an error*)
+	tshRECOVERY_DISTANCE_TOLERANCE : LREAL := 0.008; (*+/- Tolerance for the distance value in recovery. Needed because of possible selfalignment on coils (Distance between coils is 15mm)*)
+	tshRECOVERY_CHECK_TIME : TIME := T#500ms; (*Time, the shuttle must be in standstill in front of the barrier in order to check, if the shuttle is able to pass or not*)
+	tshDISTANCE_SEG_END : LREAL := 0.03; (*Distance the shuttle center point should be away from the segment end (Needed to prevent asymmetric load on the segment and have a better handover)*)
+	tshLOGBOOK_DEFAULT_SIZE : UDINT := 200*1024; (*Default size for a userdefined logbook, if it has to be created (200kB = 200 * 1024B)*)
+	tshAUTO_PAUSE_SYSTEM_OFFSET : SINT := -1; (*Offset for the allowed number of shuttles for the auto pause functionality. Due to the behavior a sytem offset is applied*)
+END_VAR

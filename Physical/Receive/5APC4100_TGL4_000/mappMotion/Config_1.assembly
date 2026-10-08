@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Configuration>
+  <Element ID="gAssembly_1" Type="assembly">
+    <Group ID="Tracks">
+      <Group ID="Track[1]">
+        <Group ID="Segments">
+          <Property ID="SegmentRef[1]" Value="::Seg_01" />
+          <Property ID="SegmentRef[2]" Value="::Seg_02" />
+        </Group>
+      </Group>
+    </Group>
+    <Group ID="CommonSegmentSettings">
+      <Selector ID="StopReaction" Value="CoastToStandstill" />
+      <Group ID="ControllerParameters">
+        <Group ID="DefaultParameter">
+          <Group ID="Controller">
+            <Group ID="Position">
+              <Property ID="ProportionalGain" Value="150" />
+            </Group>
+            <Group ID="Speed">
+              <Property ID="ProportionalGain" Value="80" />
+            </Group>
+            <Group ID="FeedForward">
+              <Property ID="TotalMass" Value="0.75" />
+              <Property ID="ForcePositive" Value="2.6" />
+              <Property ID="ForceNegative" Value="2.6" />
+              <Property ID="SpeedForceFactor" Value="0.69" />
+            </Group>
+          </Group>
+          <Group ID="MovementErrorLimits">
+            <Property ID="PositionError" Value="0.05" />
+          </Group>
+        </Group>
+      </Group>
+      <Group ID="Compensation">
+        <Selector ID="CoggingCompensation" Value="Inactive" />
+        <Property ID="ElongationCompensation" Value="Active" />
+      </Group>
+      <Property ID="ShuttleIdentificationTime" Value="1" />
+    </Group>
+    <Group ID="Shuttles">
+      <Property ID="MaxShuttleCount" Value="10" />
+      <Group ID="ShuttleStereotypes">
+        <Property ID="ShuttleStRef[1]" Value="ShuttleStereotype_1" />
+      </Group>
+      <Group ID="MagnetPlateConfigurations">
+        <Selector ID="ShuttleType[1]" />
+      </Group>
+    </Group>
+  </Element>
+</Configuration>

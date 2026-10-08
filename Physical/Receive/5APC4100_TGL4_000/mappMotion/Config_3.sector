@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Configuration>
+  <Element ID="Sector_Receive" Type="sector">
+    <Selector ID="Type">
+      <Group ID="StartSegment">
+        <Property ID="SegmentRef" Value="::Seg_02" />
+        <Property ID="PositionRelativeTo" Value="FromEnd" />
+      </Group>
+      <Group ID="EndSegment">
+        <Property ID="SegmentRef" Value="::Seg_02" />
+        <Property ID="Position" Value="0.33" />
+      </Group>
+    </Selector>
+  </Element>
+  <Element ID="Sector_Parking" Type="sector">
+    <Selector ID="Type">
+      <Group ID="StartSegment">
+        <Property ID="SegmentRef" Value="::Seg_01" />
+      </Group>
+      <Group ID="EndSegment">
+        <Property ID="SegmentRef" Value="::Seg_01" />
+        <Property ID="PositionRelativeTo" Value="FromEnd" />
+      </Group>
+    </Selector>
+  </Element>
+</Configuration>

@@ -1,0 +1,8 @@
+VAR
+	fbAsmReceiveShuttleAdd : TSH_AsmReceiveShuttleAdd;
+	Config : TshConfigReceiveType;
+	Parameter : TshAsmReceiveParType;
+	HandoverDataFromSend : ARRAY[0..15] OF BYTE;
+	HandoverDataToSend : TshCommReceiveToSendType;
+	Enable : BOOL;
+END_VAR

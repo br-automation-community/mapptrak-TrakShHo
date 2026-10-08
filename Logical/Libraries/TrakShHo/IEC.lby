@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<?AutomationStudio FileVersion="4.9"?>
+<Library Version="6.0.0" SubType="IEC" Description="Offers shuttle handover functionality for multi APC ACOPOStrak systems using Catch mode" xmlns="http://br-automation.co.at/AS/Library">
+  <Files>
+    <File>RevisionHistory.txt</File>
+    <File Description="MIT License file">LICENSE</File>
+    <File Description="Exported data types">TrakShHo.typ</File>
+    <File Description="Exported constants">TrakShHo.var</File>
+    <File>TSH_ERROR_IDs.var</File>
+    <File Description="Exported functions and function blocks">TrakShHo.fun</File>
+    <File>TSH_AsmSendShuttleDelete.st</File>
+    <File>TSH_AsmSendShuttleDelete_Actions.st</File>
+    <File>TSH_AsmReceiveShuttleAdd.st</File>
+    <File>TSH_AsmReceiveShuttleAdd_Actions.st</File>
+    <File>CommonActions.st</File>
+    <File>UserEventTexts.tmx</File>
+    <File>TSH_Texts.br</File>
+  </Files>
+  <Dependencies>
+    <Dependency ObjectName="McAcpTrak" FromVersion="6.8.0" />
+    <Dependency ObjectName="AsBrStr" />
+    <Dependency ObjectName="ArEventLog" />
+    <Dependency ObjectName="standard" />
+    <Dependency ObjectName="runtime" />
+    <Dependency ObjectName="brsystem" />
+    <Dependency ObjectName="AsIODiag" />
+    <Dependency ObjectName="sys_lib" />
+  </Dependencies>
+</Library>

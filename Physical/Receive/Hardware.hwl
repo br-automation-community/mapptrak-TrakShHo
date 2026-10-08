@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?AutomationStudio FileVersion="4.9"?>
+<BR.AS.HardwareTopology>
+  <TimeStamps>
+    <TimeStamp LogicalPath="Receive.Hardware.hw" LastWriteTime="10/08/2026 11:06:21" />
+  </TimeStamps>
+  <Modules>
+    <Module Name="8F1I01.AA66.xxxx-1" Type="8F1I01.AA66.xxxx-1" X="250" Y="321" RotationAngle="180" />
+    <Module Name="8F1I01.AA66.xxxx-1_a" Type="8F1I01.AA66.xxxx-1" X="513" Y="321" RotationAngle="180" />
+    <Module Name="5APC4100_TGL4_000" Type="5APC4100.TGL4-000" X="117" Y="100" />
+    <Module Name="5APC4100.BX01-000" Type="5APC4100.BX01-000" X="177.4" Y="149" />
+    <Module Name="5LS182.6-2" Type="5LS182.6-2" X="182.4" Y="162" />
+  </Modules>
+  <Links>
+    <Link From="5LS182.6-2" To="8F1I01.AA66.xxxx-1" FromPort="IF1" ToPort="PLK3" IsRoutedByUser="False">
+      <Point X="224.200012" Y="170" />
+      <Point X="224.200012" Y="170" />
+      <Point X="234.200012" Y="170" />
+      <Point X="245" Y="170" />
+      <Point X="245" Y="375" />
+      <Point X="381.5" Y="375" />
+      <Point X="381.5" Y="368" />
+      <Point X="381.5" Y="361" />
+      <Point X="381.5" Y="361" />
+    </Link>
+    <Link From="8F1I01.AA66.xxxx-1" To="8F1I01.AA66.xxxx-1_a" FromPort="PLK2" ToPort="PLK1" IsRoutedByUser="False">
+      <Point X="410.5" Y="361" />
+      <Point X="410.5" Y="361" />
+      <Point X="410.5" Y="368" />
+      <Point X="410.5" Y="375" />
+      <Point X="615.5" Y="375" />
+      <Point X="615.5" Y="368" />
+      <Point X="615.5" Y="361" />
+      <Point X="615.5" Y="361" />
+    </Link>
+  </Links>
+  <InfoElements />
+</BR.AS.HardwareTopology>

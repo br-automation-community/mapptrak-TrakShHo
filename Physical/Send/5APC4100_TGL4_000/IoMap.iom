@@ -1,0 +1,5 @@
+VAR_CONFIG
+	::Send:HandoverDataToReceive AT %QO."epl_icn".ToReceive;
+	::Send:HandoverDataFromReceive AT %IO."epl_icn".ToSend;
+	::Send:Enable AT %IX."epl_icn".Enable;
+END_VAR

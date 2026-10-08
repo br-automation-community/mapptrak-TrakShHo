@@ -1,0 +1,262 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<tmx version="1.4">
+  <header creationtool="B&amp;R Automation Studio" creationtoolversion="4.2" datatype="unknown" segtype="sentence" adminlang="en" srclang="en" o-tmf="TMX">
+    <note>Change the namespace to define where this text module should be located within the logical structure of your texts</note>
+    <prop type="x-BR-TS:Namespace">User/EventLog</prop>
+  </header>
+  <body>
+    <tu tuid="-536164350">
+      <note>tshERR_BUFFER_WRONG_SIZE</note>
+      <tuv xml:lang="de">
+        <seg>Die Kommunikationsvariable hat eine falsche Größe</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The communication buffer has the wrong size </seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536163451">
+      <note>tshERR_COMMUNICATION_TIMEOUT</note>
+      <tuv xml:lang="de">
+        <seg>Die Kommunikation zwischen den Assemblies ist unterbrochen</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The communication timed out</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164150">
+      <note>tshERR_CONFIG_VALUE</note>
+      <tuv xml:lang="de">
+        <seg>Ein Konfigurations Parameter hat einen ungültigen Wert</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>A Configuration parameter has a wrong value. See Logger entry</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536162451">
+      <note>tshERR_HANDOVER</note>
+      <tuv xml:lang="de">
+        <seg>Ein Fehler ist während der Übergabe aufgetreten</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Error while the handover is happening</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536165552">
+      <note>tshERR_INTERNAL</note>
+      <tuv xml:lang="de">
+        <seg>Interner Fehler (Details in ASCII Data und Info Ausgang des Funktionsblocks)</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Internal error (Details see ASCII data and info output of the function block)</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164451">
+      <note>tshERR_NO_ASM_REF</note>
+      <tuv xml:lang="de">
+        <seg>Keine Assembly Referenz am Funktionsblock angegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No Assembly reference is assigned to the function block</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164351">
+      <note>tshERR_NO_BUFFER_REF</note>
+      <tuv xml:lang="de">
+        <seg>Keine Referenz der Kommunikationsvariable am Funktionsblock angegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No communication buffer reference is assigned to the function block</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164151">
+      <note>tshERR_NO_CONFIG_REF</note>
+      <tuv xml:lang="de">
+        <seg>Keine Konfigurations Referenz am Funktionsblock angegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No Configuration reference is assigned to the function block</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164251">
+      <note>tshERR_NO_PARAMETER_REF</note>
+      <tuv xml:lang="de">
+        <seg>Keine Parameter Referenz am Funktionsblock angegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No Parameter reference is assigned to the function block</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164449">
+      <note>tshERR_NO_PP_REF</note>
+      <tuv xml:lang="de">
+        <seg>Keine Prozesspunkt Referenz am Funktionsblock angegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No Process point reference is assigned to the function block</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536163450">
+      <note>tshERR_NO_RESPONSE</note>
+      <tuv xml:lang="de">
+        <seg>Assembly 2 hat keine Bestätigung innerhalb der festgelegten Zeit gegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>There is no response of Assembly 2 while the handover procedure </seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164450">
+      <note>tshERR_NO_SEC_REF</note>
+      <tuv xml:lang="de">
+        <seg>Keine Sector Referenz am Funktionsblock angegeben</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No Sector reference is assigned to the function block</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164250">
+      <note>tshERR_PARAMETER_VALUE</note>
+      <tuv xml:lang="de">
+        <seg>Ein Parameter hat einen ungültigen Wert</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>A Parameter has a wrong value</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536161451">
+      <note>tshERR_RECOVERY</note>
+      <tuv xml:lang="de">
+        <seg>Es ist ein Fehler während dem Recovery aufgetreten</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>There was an error during recovery</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536163351">
+      <note>tshERR_SHUTTLE_ERROR_STOP</note>
+      <tuv xml:lang="de">
+        <seg>Ein Shuttle hatte wärend der Übergabe einen Fehlerstopp</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>A shuttle had an errorstop in the handover zone </seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536163350">
+      <note>tshERR_SHUTTLE_POSITIONING</note>
+      <tuv xml:lang="de">
+        <seg>Das Positionieren eines Shuttles für die Übergabe ist nicht möglich</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The positioning of a shuttle for the handover failed</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-536164349">
+      <note>tshERR_WRONG_USERDATA_SIZE</note>
+      <tuv xml:lang="de">
+        <seg>Die Größe der Anwenderdaten passt nicht zur angegebenen Größe der Kommunikationsvariable</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The size of the userdata is not matching with the size of the communication buffer </seg>
+      </tuv>
+    </tu>
+    <tu tuid="1611318198">
+      <note>tshINFO_HANDOVER_LENGHT</note>
+      <tuv xml:lang="de">
+        <seg>Information über die Länge des Übergabebereiches für diagnostische Zwecke</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Information, how long the overlapping area is for diagnostic reasons</seg>
+      </tuv>
+    </tu>
+    <tu tuid="1611318197">
+      <note>tshINFO_HANDOVER_REFERENCE_POINT</note>
+      <tuv xml:lang="de">
+        <seg>Information über die Lage der Referenzposition für diagnostische Zwecke</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Information, where the handover point is located for diagnostic reasons </seg>
+      </tuv>
+    </tu>
+    <tu tuid="1611318096">
+      <note>tshINFO_INTERNAL</note>
+      <tuv xml:lang="de">
+        <seg>Interne Informationen (Details in ASCII Data)</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Internal Information (Details see ASCII)</seg>
+      </tuv>
+    </tu>
+    <tu tuid="537576373">
+      <note>tshSCS_HANDOVER_INIT</note>
+      <tuv xml:lang="de">
+        <seg>Initialisierung der Übergabe war erfolgreich</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The handover was initialized successfully </seg>
+      </tuv>
+    </tu>
+    <tu tuid="537576473">
+      <note>tshSCS_HANDOVER_RESTART</note>
+      <tuv xml:lang="de">
+        <seg>Neustart der Übergabe war erfolgreich</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The handover was restartet successfully </seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1609906175">
+      <note>tshWRN_HANDOVER_SHUTTLE_STOP</note>
+      <tuv xml:lang="de">
+        <seg>Während der Übergabe hat das Shuttle einen Fehlerstopp. Die Übergabe wird fortgeführt</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>During the handover, the shuttle went to error stop </seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1609906275">
+      <note>tshWRN_HANDOVER_STOP</note>
+      <tuv xml:lang="de">
+        <seg>Die Übergabe ist aufgrund eines Fehlers aktuell nicht möglich.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The handover stopped due to an error. No handover possible right now.</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1609907376">
+      <note>tshWRN_INTERNAL
+</note>
+      <tuv xml:lang="de">
+        <seg>Interne Warnung (Details in ASCII Data)</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Internal warning (Details see ASCII data)</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1609898275">
+      <note>tshWRN_SIMULATION</note>
+      <tuv xml:lang="de">
+        <seg>Warnung von der aktiven Simulation (Details in ASCII Data)
+</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Warning related to active simulation (Details see ASCII data)</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1609907275">
+      <note>tshWRN_USERDATA</note>
+      <tuv xml:lang="de">
+        <seg>Die Größe der Anwenderdaten ist 0 Byte. Es werden keine Anwenderdaten übertragen</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The userdata size is 0 byte. No userdata is transferred to the other assembly</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-1609898075">
+      <tuv xml:lang="de">
+        <seg>Das aktuelle Shuttle im Recovery wird blockiert. Recovery wird weiterhin ausgeführt</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The shuttle currently in recovery is blocked. The recovery is continued</seg>
+      </tuv>
+    </tu>
+  </body>
+</tmx>
