@@ -415,9 +415,6 @@ ACTION TSH_AsmSend_Process:
 					StatusID													:=	Internal.LoggerEntry.OldStatusID;
 				END_IF
 				
-				(* Disable trigger point *)
-				Internal.Process.fbTrgPointEnable.Enable						:=	FALSE;
-				
 				(* Continue to wait for confirmation *)
 				IF NOT(Internal.ErrorCheck.ErrorDetected) THEN			
 					Internal.Process.Delete.Step								:=	tshAS_DELETE_SHUTTLE;
