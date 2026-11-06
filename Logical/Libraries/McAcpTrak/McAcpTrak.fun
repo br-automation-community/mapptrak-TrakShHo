@@ -1575,4 +1575,22 @@ FUNCTION_BLOCK MC_BR_TrgPointReadInfo_AcpTrak (*Returns information about a trig
 	END_VAR
 END_FUNCTION_BLOCK
 
+FUNCTION_BLOCK MC_BR_AsmListShuttles_AcpTrak (*Function block to list shuttles on a component.*)
+	VAR_INPUT
+		Assembly : REFERENCE TO McAssemblyType; (*The assembly reference establishes the connection between the function block and the assembly.*)
+		Enable : BOOL; (*Shuttles are listed cyclically. The list is retained until "Enable" is reset or the advanced parameters change.*)
+		Indices : McAcpTrakArrayType; (*Indices into the cyclic shuttle data array*)
+		AdvancedParameters : McAcpTrakAsmListShAdvParType; (*Advanced parameters for the function block.*)
+	END_VAR
+	VAR_OUTPUT
+		Valid : BOOL; (*The function block output values can be used.*)
+		Busy : BOOL; (*Function block is active and must continue to be called.*)
+		Error : BOOL; (*An error occurred during execution.*)
+		ErrorID : DINT; (*Error number.*)
+		Info : McAcpTrakAsmListShInfoType; (*Information about the shuttles on the chosen component.*)
+	END_VAR
+	VAR
+		Internal : McInternalType;
+	END_VAR
+END_FUNCTION_BLOCK
 

@@ -18,6 +18,7 @@
  * - TSH_AsmSend_BarrierClose
  * - TSH_AsmSend_BarrierOpen
  * - TSH_AsmSend_BarrierAddTickets
+ * - TSH_AsmSend_ResetProcessFBs
  * - TSH_AsmSend_ResetInDisabled
  * - TSH_AsmSend_CurrentShuttleCheck
  * - TSH_AsmSend_ErrorReaction
@@ -210,12 +211,17 @@ END_ACTION
 
 (* Handles the core process functionality of the shuttle handover - simplified without convoy *)
 ACTION TSH_AsmSend_Process:	
+	(* Clear the new data flag as soon as AsmReceive has stored the userdata (DataAck) *)
+	IF Internal.Communication.DataReceive.ProcessStatus.13 THEN
+		Internal.Communication.DataSend.ProcessCommands.1	:=	FALSE;
+	END_IF
+	
 	CASE Internal.Process.Step OF
 		tshAS_CHECK_TRIGGER:
 			(* Enable function block *)
 			Internal.Process.fbTrgPointEnable.Enable							:=	TRUE;
 			
-			IF (Internal.Process.fbTrgPointEnable.Valid) AND (Internal.Process.fbTrgPointEnable.EventCount > 0) THEN
+			IF (Internal.Process.fbTrgPointEnable.Valid) AND (Internal.Process.fbTrgPointEnable.EventCount > 0) AND NOT(Internal.Communication.DataSend.ProcessCommands.1) AND NOT(Internal.Communication.DataReceive.ProcessStatus.13) THEN
 				TSH_AsmSend_TrgPointGetInfo;
 				
 				(* Only when the shuttle is usable, the handover is executed *) 
@@ -251,24 +257,25 @@ ACTION TSH_AsmSend_Process:
 				
 				Internal.Process.ShuttleID										:=	Internal.Process.fbShReadInfo.ShuttleInfo.AdditionalInfo.ID;
 				
-				(* Give information about the shuttle currently in the handover *)
-				IF (Internal.Configuration.LoggingMode = tshLOGGING_DEBUGGING) THEN
-					Internal.LoggerEntry.OldStatusID							:=	StatusID;
-					StatusID													:=	tshINFO_INTERNAL;
-					Internal.LoggerEntry.LoggerMessage							:=	'HANDOVER DEBUG - Shuttle with ID ';
-					brsitoa(Internal.Process.ShuttleID, ADR(Internal.LoggerEntry.ValueString));
-					brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(Internal.LoggerEntry.ValueString));
-					brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(' currently in handover'));
-					TSH_WriteLoggerEntry;		
-					StatusID													:=	Internal.LoggerEntry.OldStatusID;
-				END_IF
-			
 				(* Copy userdata *)
 				TSH_ShuttleCopyUserData;
 				
 				(* Continue to wait for confirmation *)
 				IF NOT(Internal.ErrorCheck.ErrorDetected) THEN			
-					Internal.Process.Step										:=	tshAS_WAIT_FOR_CATCH;
+					(* Log once on step entry, not every cycle while an error holds the step *)
+					IF (Internal.Configuration.LoggingMode = tshLOGGING_DEBUGGING) THEN
+						Internal.LoggerEntry.OldStatusID						:=	StatusID;
+						StatusID												:=	tshINFO_INTERNAL;
+						Internal.LoggerEntry.LoggerMessage						:=	'HANDOVER DEBUG - Shuttle with ID ';
+						brsitoa(Internal.Process.ShuttleID, ADR(Internal.LoggerEntry.ValueString));
+						brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(Internal.LoggerEntry.ValueString));
+						brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(' currently in handover'));
+						TSH_WriteLoggerEntry;
+						StatusID												:=	Internal.LoggerEntry.OldStatusID;
+					END_IF
+					
+					Internal.Process.Step										:=	tshAS_ROUTE_SHUTTLE;
+					Internal.Communication.DataSend.ProcessCommands.1			:=	TRUE;
 					Internal.Process.fbShReadInfo.Enable						:= FALSE;
 					
 					Internal.Process.fbRoutedMoveAbs.Execute					:= TRUE;
@@ -296,8 +303,8 @@ ACTION TSH_AsmSend_Process:
 				Internal.Process.fbShReadInfo.Enable							:=	FALSE;
 			END_IF
 			
-		tshAS_WAIT_FOR_CATCH:
-			Internal.Communication.DataSend.ProcessCommands.0					:=	TRUE;	
+		tshAS_ROUTE_SHUTTLE:
+			(* Userdata is handed over, AsmReceive confirms with DataAck *)	
 			
 			IF (Internal.Process.fbReadStatus.Valid) AND (Internal.Process.fbReadStatus.ErrorStop) THEN
 				Internal.LoggerEntry.OldStatusID								:=	StatusID;
@@ -308,7 +315,7 @@ ACTION TSH_AsmSend_Process:
 				Internal.Process.fbReadStatus.Enable							:=	FALSE;
 			END_IF
 			
-			IF (Internal.Communication.DataReceive.ProcessStatus.11) AND NOT(Internal.Communication.DataReceive.ProcessStatus.5) AND NOT(Internal.Communication.DataReceive.ProcessStatus.8) THEN
+			IF (Internal.Communication.DataReceive.ProcessStatus.11) AND NOT(Internal.Communication.DataReceive.ProcessStatus.5) THEN
 				HandoverReady													:=	FALSE;
 				Internal.Recovery.RecoveryNeeded								:=	TRUE;		
 				Active															:=	FALSE;
@@ -318,15 +325,14 @@ ACTION TSH_AsmSend_Process:
 				TSH_WriteLoggerEntry;	
 			END_IF
 			
-			Internal.ResponseTimeoutCheck.Response								:=	Internal.Communication.DataReceive.ProcessStatus.8;
-			TSH_CheckResponseTimeout;
 			
-			IF (Internal.ResponseTimeoutCheck.Responded) OR Internal.Info.Simulation.Type = tshSIM_TYPE_AR_SIM AND Internal.Process.fbRoutedMoveAbs.Active THEN
+			IF (Internal.Process.fbRoutedMoveAbs.Active) AND (Internal.Process.RoutedMoveAbsActiveOld) THEN
 				Internal.Process.fbReadStatus.Enable							:=	FALSE;
-				Internal.Communication.DataSend.ProcessCommands.0				:=	FALSE;
 				Internal.Process.fbRoutedMoveAbs.Execute						:=	FALSE;
 				
-				Internal.Process.Step											:=	tshAS_WAIT_HANDOVER_DONE;
+				brsmemset(ADR(Internal.Process.ShuttleRef),0,SIZEOF(Internal.Process.ShuttleRef));
+				Internal.Process.ShuttleID										:=	0;
+				Internal.Process.Step											:=	tshAS_CHECK_TRIGGER;
 			ELSIF Internal.Process.fbRoutedMoveAbs.Error THEN
 				Internal.Process.Step											:=	tshAS_CHECK_TRIGGER;
 				Active															:=	FALSE;
@@ -342,32 +348,13 @@ ACTION TSH_AsmSend_Process:
 				Internal.Process.fbRoutedMoveAbs.Execute						:=	FALSE;
 			ELSIF (Error) THEN
 				Internal.Process.Step											:=	tshAS_CHECK_TRIGGER;
-			END_IF				
-		
-		tshAS_WAIT_HANDOVER_DONE:
-			Internal.Communication.DataSend.ProcessStatus.8						:=	TRUE;
-			Internal.ResponseTimeoutCheck.Response								:=	NOT(Internal.Communication.DataReceive.ProcessStatus.8);
-			TSH_CheckResponseTimeout;
-			
-			IF (Internal.Configuration.LoggingMode = tshLOGGING_DEBUGGING) AND (Error) THEN
-				Internal.LoggerEntry.OldStatusID								:=	StatusID;
-				StatusID														:=	tshINFO_INTERNAL;
-				Internal.LoggerEntry.LoggerMessage								:=	'HANDOVER DEBUG - Confirmation for a successful Shuttle handover came not in time';
-				TSH_WriteLoggerEntry;		
-				StatusID														:=	Internal.LoggerEntry.OldStatusID;
 			END_IF
-			
-			IF (Internal.ResponseTimeoutCheck.Responded) THEN
-				brsmemset(ADR(Internal.Process.ShuttleRef),0,SIZEOF(Internal.Process.ShuttleRef));
-				Internal.Process.ShuttleID										:=	0;
-				Internal.Communication.DataSend.ProcessStatus.8					:=	FALSE;
-				Internal.Process.Step											:=	tshAS_CHECK_TRIGGER;
-			ELSIF (Error) THEN
-				Internal.Process.Step											:=	tshAS_CHECK_TRIGGER;
-			END_IF
+
+			Internal.Process.RoutedMoveAbsActiveOld	:=	Internal.Process.fbRoutedMoveAbs.Active;
 		
 	END_CASE
 	
+	(* Delete chain runs independently of the handover chain above *)
 	CASE Internal.Process.Delete.Step OF
 		tshAS_CHECK_TRIGGER:
 			(* Enable function block *)
@@ -403,20 +390,20 @@ ACTION TSH_AsmSend_Process:
 				
 				Internal.Process.Delete.ShuttleID								:=	Internal.Process.Delete.fbShReadInfo.ShuttleInfo.AdditionalInfo.ID;
 				
-				(* Give information about the shuttle currently in the handover *)
-				IF (Internal.Configuration.LoggingMode = tshLOGGING_DEBUGGING) THEN
-					Internal.LoggerEntry.OldStatusID							:=	StatusID;
-					StatusID													:=	tshINFO_INTERNAL;
-					Internal.LoggerEntry.LoggerMessage							:=	'HANDOVER DEBUG - Shuttle with ID ';
-					brsitoa(Internal.Process.Delete.ShuttleID, ADR(Internal.LoggerEntry.ValueString));
-					brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(Internal.LoggerEntry.ValueString));
-					brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(' currently in deletion'));
-					TSH_WriteLoggerEntry;		
-					StatusID													:=	Internal.LoggerEntry.OldStatusID;
-				END_IF
-				
 				(* Continue to wait for confirmation *)
 				IF NOT(Internal.ErrorCheck.ErrorDetected) THEN			
+					(* Log once on step entry, not every cycle while an error holds the step *)
+					IF (Internal.Configuration.LoggingMode = tshLOGGING_DEBUGGING) THEN
+						Internal.LoggerEntry.OldStatusID						:=	StatusID;
+						StatusID												:=	tshINFO_INTERNAL;
+						Internal.LoggerEntry.LoggerMessage						:=	'HANDOVER DEBUG - Shuttle with ID ';
+						brsitoa(Internal.Process.Delete.ShuttleID, ADR(Internal.LoggerEntry.ValueString));
+						brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(Internal.LoggerEntry.ValueString));
+						brsstrcat(ADR(Internal.LoggerEntry.LoggerMessage), ADR(' currently in deletion'));
+						TSH_WriteLoggerEntry;
+						StatusID												:=	Internal.LoggerEntry.OldStatusID;
+					END_IF
+					
 					Internal.Process.Delete.Step								:=	tshAS_DELETE_SHUTTLE;
 				END_IF
 				
@@ -820,6 +807,19 @@ END_ACTION
 
 (*################################################################################################################################################*)
 
+(* Resets the process and delete steps and enables, used when the handover is put on hold *)
+ACTION TSH_AsmSend_ResetProcessFBs:
+	Internal.Process.Step									:=	tshAS_CHECK_TRIGGER;
+	Internal.Process.Delete.Step							:=	tshAS_CHECK_TRIGGER;
+	Internal.Process.fbShReadInfo.Enable					:=	FALSE;
+	Internal.Process.fbReadStatus.Enable					:=	FALSE;
+	Internal.Process.fbRoutedMoveAbs.Execute				:=	FALSE;
+	Internal.Process.Delete.fbShReadInfo.Enable				:=	FALSE;
+	Internal.Process.Delete.fbAsmDeleteShuttle.Execute		:=	FALSE;
+END_ACTION
+
+(*################################################################################################################################################*)
+
 (* This action resets all function blocks, which do need more than 1 cycle *)
 ACTION TSH_AsmSend_ResetInDisabled:
 	(* Disable all function blocks *)
@@ -859,8 +859,8 @@ END_ACTION
 ACTION TSH_AsmSend_CurrentShuttleCheck:
 	IF (Internal.Process.fbReadStatus.Valid) THEN
 		IF (Internal.Process.fbReadStatus.ErrorStop) THEN
-			(* Reset the command to add the shuttle on the other assembly *)
-			Internal.Communication.DataSend.ProcessCommands.0	:=	FALSE;
+			(* Reset the new data command, the shuttle is not handed over *)
+			Internal.Communication.DataSend.ProcessCommands.1	:=	FALSE;
 			(* Reset the state machine *)
 			Internal.Process.Step								:=	tshAS_CHECK_TRIGGER;
 			(* Display an error *)
@@ -1049,7 +1049,7 @@ ACTION TSH_AsmSend_ErrorReaction:
 			IF NOT(Internal.Process.NoShuttlesOnSector) THEN
 				(* If there is a shuttle in the handover right now, trigger stopping *)
 				Internal.Process.fbSecStop.AdvancedParameters.Deceleration	:=	Internal.Communication.DataReceive.ParaDeceleration;
-				Internal.Process.fbSecStop.Execute				:=	(Internal.Process.Step > tshAS_CHECK_TRIGGER) AND (Internal.Process.Step < tshAS_WAIT_FOR_CATCH);
+				Internal.Process.fbSecStop.Execute				:=	(Internal.Process.Step > tshAS_CHECK_TRIGGER) AND (Internal.Process.Step < tshAS_ROUTE_SHUTTLE);
 				(* When the timer is true, there was no new shuttle for the specified time and handove was stopped properly *)
 				IF (Internal.ErrorCheck.fbTimerError.Q) THEN
 					(* Recovery needed before restarting the handover *)
@@ -1095,9 +1095,9 @@ ACTION TSH_AsmSend_ErrorReaction:
 	(* Check for shuttle errors on Assembly Send, when handover is running *)
 	IF (Internal.State = tshSTATE_RUNNING) THEN
 		(* Just react, if the current shuttle is not effected *)
-		IF (Internal.ErrorCheck.ShuttlesInErrorStop AND NOT(Internal.ErrorCheck.CurrentShuttleInErrorStop) AND (Internal.Process.Step <> tshAS_WAIT_HANDOVER_DONE)) 
-			OR (Internal.ErrorCheck.ShuttlesDisabled AND NOT(Internal.ErrorCheck.CurrentShuttleDisabled) AND (Internal.Process.Step <>	tshAS_WAIT_HANDOVER_DONE)) 
-			OR (Internal.ErrorCheck.ShuttlesStandstill AND NOT(Internal.ErrorCheck.CurrentShuttleStandstill) AND (Internal.Process.Step <> 	tshAS_WAIT_HANDOVER_DONE)) THEN
+		IF (Internal.ErrorCheck.ShuttlesInErrorStop AND NOT(Internal.ErrorCheck.CurrentShuttleInErrorStop)) 
+			OR (Internal.ErrorCheck.ShuttlesDisabled AND NOT(Internal.ErrorCheck.CurrentShuttleDisabled)) 
+			OR (Internal.ErrorCheck.ShuttlesStandstill AND NOT(Internal.ErrorCheck.CurrentShuttleStandstill)) THEN
 			(* If the barrier is not closed yet, close it (Needed to not flood the logger in mode debugging, as the barrier will create entries as well) *)
 			IF (Internal.Barrier.fbBarrierReadInfo.Valid) AND (Internal.Barrier.fbBarrierReadInfo.BarrierInfo.Status <> mcACPTRAK_BARRIER_CLOSED) THEN
 				(* Clear all tickets and close the barrier *)
@@ -1131,7 +1131,7 @@ ACTION TSH_AsmSend_ErrorReaction:
 			END_IF		
 			(* If there is a shuttle in the handover right now, trigger stopping *)
 			Internal.Process.fbSecStop.AdvancedParameters.Deceleration	:=	Internal.Communication.DataReceive.ParaDeceleration;
-			Internal.Process.fbSecStop.Execute					:=	(Internal.Process.Step > tshAS_CHECK_TRIGGER) AND (Internal.Process.Step < tshAS_WAIT_FOR_CATCH);
+			Internal.Process.fbSecStop.Execute					:=	(Internal.Process.Step > tshAS_CHECK_TRIGGER) AND (Internal.Process.Step < tshAS_ROUTE_SHUTTLE);
 			(* When the timer is true, there was no new shuttle for the specified time and handove was stopped properly *)
 			IF (Internal.ErrorCheck.fbTimerError.Q) THEN
 				(* Recovery needed before restarting the handover *)
@@ -1239,7 +1239,7 @@ END_ACTION
 
 (*################################################################################################################################################*)
 
-(* Handles the error reaction for all assembly and functionblock related errors (same procedure *)
+(* Handles the error reaction for all assembly and functionblock related errors, same procedure for all *)
 ACTION TSH_AsmSend_ErrorReaction_AssemblyError:
 	(* Set the error detected flag *)
 	Internal.ErrorCheck.ErrorDetected					:=	TRUE;
@@ -1297,7 +1297,7 @@ ACTION TSH_AsmSend_ErrorReaction_AssemblyError:
 	ELSE
 		(* If there is a shuttle in the handover right now, trigger stopping *)
 		Internal.Process.fbSecStop.AdvancedParameters.Deceleration	:=	Internal.Communication.DataReceive.ParaDeceleration;
-		Internal.Process.fbSecStop.Execute				:=	(Internal.Process.Step > tshAS_CHECK_TRIGGER) AND (Internal.Process.Step < tshAS_WAIT_FOR_CATCH);
+		Internal.Process.fbSecStop.Execute				:=	(Internal.Process.Step > tshAS_CHECK_TRIGGER) AND (Internal.Process.Step < tshAS_ROUTE_SHUTTLE);
 		Internal.Recovery.fbSecStop.AdvancedParameters.Deceleration		:=	Internal.Communication.DataReceive.ParaDeceleration;
 		(* When the timer is true, there was no new shuttle for the specified time and handove was stopped properly *)
 		IF (Internal.ErrorCheck.fbTimerError.Q) THEN
@@ -1355,12 +1355,12 @@ ACTION TSH_AsmSend_SimulateCommInterface:
 	Internal.Communication.DataReceive.ProcessStatus.5						:=	Internal.Communication.DataSend.ProcessStatus.5;	(* Running *)
 	Internal.Communication.DataReceive.ProcessStatus.6						:=	(Internal.State = tshSTATE_ON_HOLD) OR (Internal.State = tshSTATE_ERROR);	(* On hold *)
 	Internal.Communication.DataReceive.ProcessStatus.7						:=	FALSE;	(* Error *)
-	Internal.Communication.DataReceive.ProcessStatus.8						:=	Internal.Communication.DataSend.ProcessCommands.0;	(* Shuttle added successfully *)
+	Internal.Communication.DataReceive.ProcessStatus.8						:=	FALSE;	(* FREE *)
 	Internal.Communication.DataReceive.ProcessStatus.9						:=	FALSE;	(* FREE *)
 	Internal.Communication.DataReceive.ProcessStatus.10						:=	FALSE;	(* FREE *)
 	Internal.Communication.DataReceive.ProcessStatus.11						:=	FALSE;	(* Recovery needed *)
 	Internal.Communication.DataReceive.ProcessStatus.12						:=	FALSE;	(* Shuttle error on AsmReceive *)
-	Internal.Communication.DataReceive.ProcessStatus.13						:=	FALSE;	(* FREE *)
+	Internal.Communication.DataReceive.ProcessStatus.13						:=	Internal.Communication.DataSend.ProcessCommands.1;	(* DataAck: AsmReceive has stored the userdata *)
 	Internal.Communication.DataReceive.ProcessStatus.14						:=	TRUE;	(* Shuttle in handover zone data valid *)
 	Internal.Communication.DataReceive.ProcessStatus.15						:=	TRUE;	(* No Shuttles on sector *)
 	
@@ -1380,6 +1380,7 @@ ACTION TSH_AsmSend_Recovery:
 			Internal.Communication.DataSend.RecoveryInfo.CurrentZone.0		:=	TRUE;
 			(* Disable the process point to not create events during recovery *)
 			Internal.Process.fbTrgPointEnable.Enable						:=	FALSE;
+			Internal.Process.Delete.fbTrgPointEnable.Enable					:=	FALSE;
 			
 			(* When both assemblies are in recovery mode AND Receive is ready to catch (CurrentZone.5), start the recovery logic *)
 			IF (Internal.Communication.DataSend.ProcessStatus.3) AND (Internal.Communication.DataReceive.ProcessStatus.3) AND (Internal.Communication.DataReceive.RecoveryInfo.CurrentZone.0) AND (Internal.Communication.DataReceive.RecoveryInfo.CurrentZone.5) THEN
@@ -1499,10 +1500,9 @@ ACTION TSH_AsmSend_Recovery:
 					Internal.Recovery.fbRoutedMoveAbs.Execute				:= TRUE;
 					Internal.Recovery.fbRoutedMoveAbs();
 					
-					IF Internal.Recovery.fbRoutedMoveAbs.Active THEN
-						Internal.Recovery.fbRoutedMoveAbs.Execute			:= FALSE;
-						(* Set the add-shuttle command; Standalone Send simulation uses it to emulate the catch confirmation *)
-						Internal.Communication.DataSend.ProcessCommands.0	:= TRUE;
+					IF Internal.Recovery.fbRoutedMoveAbs.Active AND NOT(Internal.Communication.DataReceive.ProcessStatus.13) THEN
+						(* Hand the userdata over to AsmReceive (FIFO), the move keeps running *)
+						Internal.Communication.DataSend.ProcessCommands.1	:= TRUE;
 						Internal.RecoverySequence.SequenceStep				:= 40;
 						(* Log *)
 						IF (Internal.Configuration.LoggingMode >= tshLOGGING_ADVANCED) THEN
@@ -1524,16 +1524,18 @@ ACTION TSH_AsmSend_Recovery:
 						Internal.Info.Diagnosis.StatusID					:= Internal.Recovery.fbRoutedMoveAbs.ErrorID;
 					END_IF
 					
-				40:	(* Step 4: Wait for Receive confirmation (ProcessStatus.8) *)
-					IF Internal.Communication.DataReceive.ProcessStatus.8 THEN
-						(* Receive has caught the shuttle *)
-						Internal.Communication.DataSend.ProcessCommands.0	:= FALSE;
+				40:	(* Step 4: Wait until the shuttle reached the sector end and AsmReceive stored the userdata (DataAck) *)
+					Internal.Recovery.fbRoutedMoveAbs();
+					
+					IF (Internal.Recovery.fbRoutedMoveAbs.Done) AND (Internal.Communication.DataReceive.ProcessStatus.13) THEN
+						Internal.Recovery.fbRoutedMoveAbs.Execute			:= FALSE;
+						Internal.Communication.DataSend.ProcessCommands.1	:= FALSE;
 						Internal.RecoverySequence.SequenceStep				:= 50;
 						(* Log *)
 						IF (Internal.Configuration.LoggingMode >= tshLOGGING_ADVANCED) THEN
 							Internal.LoggerEntry.OldStatusID				:= StatusID;
 							StatusID										:= tshINFO_INTERNAL;
-							Internal.LoggerEntry.LoggerMessage				:= 'RECOVERY - Receive confirmed shuttle catch';
+							Internal.LoggerEntry.LoggerMessage				:= 'RECOVERY - Shuttle at sector end, userdata stored by Receive';
 							TSH_WriteLoggerEntry;		
 							StatusID										:= Internal.LoggerEntry.OldStatusID;
 						END_IF
@@ -1582,12 +1584,11 @@ ACTION TSH_AsmSend_Recovery:
 						Internal.Info.Diagnosis.StatusID									:= Internal.Process.Delete.fbAsmDeleteShuttle.ErrorID;
 					END_IF			
 					
-				60:	(* Step 6: Confirm to Receive and get next shuttle *)
-					Internal.Communication.DataSend.ProcessStatus.8			:= TRUE;
+				60:	(* Step 6: Get next shuttle, no confirmation from Receive needed *)
 					
-					(* Wait for Receive to acknowledge (ProcessStatus.8 goes FALSE) *)
-					IF NOT Internal.Communication.DataReceive.ProcessStatus.8 THEN
-						Internal.Communication.DataSend.ProcessStatus.8		:= FALSE;
+					
+					
+					
 						Internal.Info.HandoverCount							:= Internal.Info.HandoverCount + 1;
 						
 						(* Check for more shuttles *)
@@ -1614,7 +1615,6 @@ ACTION TSH_AsmSend_Recovery:
 								StatusID									:= Internal.LoggerEntry.OldStatusID;
 							END_IF
 						END_IF
-					END_IF
 			END_CASE
 			
 		tshRECOVERY_DONE:			

@@ -1,6 +1,6 @@
 /* Automation Studio generated header file */
 /* Do not edit ! */
-/* McAcpTrak 6.8.0 */
+/* McAcpTrak 6.9.2 */
 
 #ifndef _MCACPTRAK_
 #define _MCACPTRAK_
@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 #ifndef _McAcpTrak_VERSION
-#define _McAcpTrak_VERSION 6.8.0
+#define _McAcpTrak_VERSION 6.9.2
 #endif
 
 #include <bur/plctypes.h>
@@ -37,10 +37,10 @@ extern "C"
 #endif
 
 /* Datatypes and datatypes of function blocks */
-typedef enum McAcpTrakOutputArrayEnum
-{	mcACPTRAK_BASE_OUTPUT,
-	mcACPTRAK_NO_OUTPUT
-} McAcpTrakOutputArrayEnum;
+typedef enum McAcpTrakSectorTransitionEnum
+{	mcACPTRAK_SECTOR_INTERNAL,
+	mcACPTRAK_SECTOR_PREFER_USER
+} McAcpTrakSectorTransitionEnum;
 
 typedef enum McAcpTrakAdvRouteInfoValidEnum
 {	mcACPTRAK_ROUTE_VALID,
@@ -431,6 +431,55 @@ typedef enum McAcpTrakAdvRestoreShStatusEnum
 	mcACPTRAK_RESTORE_IDNOTFOUND
 } McAcpTrakAdvRestoreShStatusEnum;
 
+typedef enum McAcpTrakCyclicShBitsEnum
+{	mcACPTRAK_CYC_SH_ACTIVE,
+	mcACPTRAK_CYC_SH_STANDSTILL,
+	mcACPTRAK_CYC_SH_INREST,
+	mcACPTRAK_CYC_SH_DISABLED,
+	mcACPTRAK_CYC_SH_CONTROLLED,
+	mcACPTRAK_CYC_SH_VALID,
+	mcACPTRAK_CYC_SH_VIRTUAL,
+	mcACPTRAK_CYC_SH_CONVOYMASTER,
+	mcACPTRAK_CYC_SH_STOPPING,
+	mcACPTRAK_CYC_SH_ERRORSTOP,
+	mcACPTRAK_CYC_SH_ERR_UNSPEC,
+	mcACPTRAK_CYC_SH_ERR_MANEUVER,
+	mcACPTRAK_CYC_SH_ERR_ENCDIFF,
+	mcACPTRAK_CYC_SH_ERR_NOGRIPPER,
+	mcACPTRAK_CYC_SH_ERR_COMMAND,
+	mcACPTRAK_CYC_SH_ERR_SEGMENT,
+	mcACPTRAK_CYC_SH_ERR_ASSEMBLY,
+	mcACPTRAK_CYC_SH_ERR_INVALIDMOVE,
+	mcACPTRAK_CYC_SH_ERR_COUPLING,
+	mcACPTRAK_CYC_SH_ERR_CHANNEL
+} McAcpTrakCyclicShBitsEnum;
+
+typedef enum McAcpTrakCyclicSegBitsEnum
+{	mcACPTRAK_CYC_SEG_ALL,
+	mcACPTRAK_CYC_SEG_COMMREADY,
+	mcACPTRAK_CYC_SEG_READYFORPOWER,
+	mcACPTRAK_CYC_SEG_POWEREDON,
+	mcACPTRAK_CYC_SEG_ENABLE,
+	mcACPTRAK_CYC_SEG_MOVE_DETECTED,
+	mcACPTRAK_CYC_SEG_ERR_INITIATOR,
+	mcACPTRAK_CYC_SEG_ERR_NONE,
+	mcACPTRAK_CYC_SEG_ERR_UNSPEC,
+	mcACPTRAK_CYC_SEG_ERR_COMMAND,
+	mcACPTRAK_CYC_SEG_ERR_SEGMENT,
+	mcACPTRAK_CYC_SEG_ERR_ASSEMBLY,
+	mcACPTRAK_CYC_SEG_ERR_CHANNEL,
+	mcACPTRAK_CYC_SEG_ERR_ENCDIFF,
+	mcACPTRAK_CYC_SEG_ERR_UNOBS
+} McAcpTrakCyclicSegBitsEnum;
+
+typedef enum McAcpTrakAsmListShSortEnum
+{	mcACPTRAK_SORT_NONE,
+	mcACPTRAK_SORT_SH_INDEX,
+	mcACPTRAK_SORT_SEG_INDEX,
+	mcACPTRAK_SORT_ASC_POS,
+	mcACPTRAK_SORT_DESC_POS
+} McAcpTrakAsmListShSortEnum;
+
 typedef enum McASMTrkPosEnum
 {	mcASMTP_ABS = 0,
 	mcASMTP_REL_TO_ONE_SEG = 1,
@@ -778,6 +827,45 @@ typedef struct McAcpTrakForceControlParameter
 	float Force;
 } McAcpTrakForceControlParameter;
 
+typedef struct MpAcpTrakCmdInfoType
+{	plcbit HomeDone;
+	plcbit DeleteAllShuttlesDone;
+	plcbit RestoreShDataDone;
+	enum McAcpTrakAdvRestoreShStatusEnum RestoreStatus;
+} MpAcpTrakCmdInfoType;
+
+typedef struct McAcpTrakShuttleCountType
+{	unsigned short Count;
+	unsigned short InStandstill;
+	unsigned short InDisabled;
+	unsigned short InStopping;
+	unsigned short InErrorStop;
+	unsigned short VirtualShuttles;
+	unsigned short Convoys;
+} McAcpTrakShuttleCountType;
+
+typedef struct McAcpTrakSegmentCountType
+{	unsigned short InDisabled;
+	unsigned short InStopping;
+	unsigned short InErrorStop;
+} McAcpTrakSegmentCountType;
+
+typedef struct McAcpTrakCurrentOverrideType
+{	float Velocity;
+} McAcpTrakCurrentOverrideType;
+
+typedef struct McAcpTrakAsmInfoType
+{	plcbit CommunicationReady;
+	plcbit ReadyForPowerOn;
+	plcbit PowerOn;
+	unsigned long StartupCount;
+	struct McAcpTrakShuttleCountType ShuttleCount;
+	struct McAcpTrakSegmentCountType SegmentCount;
+	enum McAcpTrakPLCopenStateEnum PLCopenState;
+	plcbit MovementDetected;
+	struct McAcpTrakCurrentOverrideType Override;
+} McAcpTrakAsmInfoType;
+
 typedef struct McSegmentType
 {	struct McInternalSegmentIfType* controlif;
 } McSegmentType;
@@ -814,43 +902,11 @@ typedef struct McAcpTrakAsmErrorInfoType
 	plcbit Initiator;
 } McAcpTrakAsmErrorInfoType;
 
-typedef struct McAcpTrakShuttleCountType
-{	unsigned short Count;
-	unsigned short InStandstill;
-	unsigned short InDisabled;
-	unsigned short InStopping;
-	unsigned short InErrorStop;
-	unsigned short VirtualShuttles;
-	unsigned short Convoys;
-} McAcpTrakShuttleCountType;
-
-typedef struct McAcpTrakSegmentCountType
-{	unsigned short InDisabled;
-	unsigned short InStopping;
-	unsigned short InErrorStop;
-} McAcpTrakSegmentCountType;
-
 typedef struct MpAsmInfoType
-{	plcbit ReadyForPowerOn;
-	plcbit MovementDetected;
-	float OverrideFactor;
+{	struct McAcpTrakAsmInfoType AssemblyInfo;
 	struct McAcpTrakAsmErrorInfoType ErrorInfo;
-	struct McAcpTrakShuttleCountType ShuttleCount;
-	struct McAcpTrakSegmentCountType SegmentCount;
-	enum McAcpTrakAdvRestoreShStatusEnum RestoreStatus;
+	struct MpAcpTrakCmdInfoType CommandInfo;
 } MpAsmInfoType;
-
-typedef struct MpAcpTrakShuttleData
-{	struct McAxisType Axis;
-	unsigned long Index;
-	enum McAxisPLCopenStateEnum PLCopenState;
-} MpAcpTrakShuttleData;
-
-typedef struct MpAcpTrakSegmentData
-{	struct McSegmentType Segment;
-	unsigned long Index;
-	enum McAcpTrakPLCopenStateEnum PLCopenState;
-} MpAcpTrakSegmentData;
 
 typedef struct MpAcpTrakStopModeType
 {	enum McStopModeEnum Mode;
@@ -866,12 +922,6 @@ typedef struct MpAsmAdvCmdType
 	plcbit DeleteAllShuttles;
 	plcbit RestoreShData;
 } MpAsmAdvCmdType;
-
-typedef struct MpAcpTrakComponentsType
-{	unsigned long DataAddress;
-	unsigned long DataSize;
-	enum McAcpTrakOutputArrayEnum OutputType;
-} MpAcpTrakComponentsType;
 
 typedef struct McAcpTrakAdvAsmCmdErrParType
 {	plcstring SegmentGroup[33];
@@ -1027,6 +1077,7 @@ typedef struct McAcpTrakAdvRouteParType
 	enum McAcpTrakRoutePosRelToEnum PosRelativeTo;
 	struct McAcpTrakRouteInfoParameters RouteInfoParameters;
 	plcbit SMP;
+	enum McAcpTrakSectorTransitionEnum SectorTransitionMode;
 } McAcpTrakAdvRouteParType;
 
 typedef struct McAcpTrakAdvMoveCycParType
@@ -1133,22 +1184,6 @@ typedef struct McAcpTrakAsmGetShAddInfoType
 {	unsigned long ShuttleID;
 	unsigned long UserState;
 } McAcpTrakAsmGetShAddInfoType;
-
-typedef struct McAcpTrakCurrentOverrideType
-{	float Velocity;
-} McAcpTrakCurrentOverrideType;
-
-typedef struct McAcpTrakAsmInfoType
-{	plcbit CommunicationReady;
-	plcbit ReadyForPowerOn;
-	plcbit PowerOn;
-	unsigned long StartupCount;
-	struct McAcpTrakShuttleCountType ShuttleCount;
-	struct McAcpTrakSegmentCountType SegmentCount;
-	enum McAcpTrakPLCopenStateEnum PLCopenState;
-	plcbit MovementDetected;
-	struct McAcpTrakCurrentOverrideType Override;
-} McAcpTrakAsmInfoType;
 
 typedef struct McAcpTrakShuttleMonData
 {	plcbit Available;
@@ -1568,6 +1603,7 @@ typedef struct McAcpTrakShResizeParamType
 	double ExtentToFront;
 	double ExtentToBack;
 	double Width;
+	double Shift;
 } McAcpTrakShResizeParamType;
 
 typedef struct McAcpTrakShSegCurrentValuesType
@@ -1597,6 +1633,7 @@ typedef struct McAcpTrakShSizeInfoType
 {	double ExtentToFront;
 	double ExtentToBack;
 	double Width;
+	double Shift;
 } McAcpTrakShSizeInfoType;
 
 typedef struct McAcpTrakShSwitchSecInfoType
@@ -1658,6 +1695,52 @@ typedef struct McAcpTrakAdvRestoreShDataType
 typedef struct McAcpTrakAdvRestoreShInfoType
 {	enum McAcpTrakAdvRestoreShStatusEnum Status;
 } McAcpTrakAdvRestoreShInfoType;
+
+typedef struct McAcpTrakCyclicShData
+{	struct McAxisType Axis;
+	unsigned long Index;
+	unsigned long UserState;
+	plcstring UserID[33];
+	enum McAxisPLCopenStateEnum PLCopenState;
+	plcdword Bits;
+	struct McSegmentType Segment;
+	double SegmentPosition;
+	struct McSectorType Sector;
+	double SectorPosition;
+} McAcpTrakCyclicShData;
+
+typedef struct McAcpTrakCyclicSegData
+{	struct McSegmentType Segment;
+	plcstring SegmentName[33];
+	enum McAcpTrakPLCopenStateEnum PLCopenState;
+	plcdword Bits;
+} McAcpTrakCyclicSegData;
+
+typedef struct McAcpTrakArrayType
+{	unsigned long DataAddress;
+	unsigned long DataSize;
+	unsigned long Count;
+} McAcpTrakArrayType;
+
+typedef struct McAcpTrakAsmListShOptSecParType
+{	struct McSectorType* Sector;
+	struct McAcpTrakArrayType Positions;
+	double StartPosition;
+	double EndPosition;
+	plcbit AllowDuplicates;
+	plcbit OnlyCount;
+} McAcpTrakAsmListShOptSecParType;
+
+typedef struct McAcpTrakAsmListShAdvParType
+{	struct McAcpTrakAsmListShOptSecParType Sector;
+	plcstring SegmentGroup[33];
+	plcdword SelectionBits;
+	enum McAcpTrakAsmListShSortEnum Sorting;
+} McAcpTrakAsmListShAdvParType;
+
+typedef struct McAcpTrakAsmListShInfoType
+{	unsigned long Count;
+} McAcpTrakAsmListShInfoType;
 
 typedef struct McASMTrkSegType
 {	struct McCfgUnboundedArrayType SegmentReference;
@@ -1863,6 +1946,10 @@ typedef struct McASMCSSDiverterType
 	float StrengtheningEndOverrideFactor;
 } McASMCSSDiverterType;
 
+typedef struct McASMCycSegDatType
+{	plcstring Variable[251];
+} McASMCycSegDatType;
+
 typedef struct McASMCSSType
 {	enum McASMCSSActSegSimOnPLCEnum ActivateSegmentSimulationOnPLC;
 	struct McASMCSSStopReacType StopReaction;
@@ -1873,6 +1960,7 @@ typedef struct McASMCSSType
 	unsigned short ShuttleIdentificationTime;
 	struct McASMCSSPosCtrlLagMonType PositionControllerLagMonitor;
 	struct McASMCSSDiverterType Diverter;
+	struct McASMCycSegDatType CyclicSegmentData;
 } McASMCSSType;
 
 typedef struct McASMShSSASSwOntoSegSecType
@@ -1930,9 +2018,14 @@ typedef struct McASMShColAvMaxMdlDimWidType
 {	double Width;
 } McASMShColAvMaxMdlDimWidType;
 
+typedef struct McASMShColAvMaxMdlDimShiftType
+{	double Shift;
+} McASMShColAvMaxMdlDimShiftType;
+
 typedef struct McASMShColAvMaxMdlDimType
 {	struct McASMShColAvMaxMdlDimLenType Length;
 	struct McASMShColAvMaxMdlDimWidType Width;
+	struct McASMShColAvMaxMdlDimShiftType Shift;
 } McASMShColAvMaxMdlDimType;
 
 typedef struct McASMShVSCASType
@@ -1963,6 +2056,10 @@ typedef struct McASMShBaReDatType
 	struct McASMShBaReDatUseType Used;
 } McASMShBaReDatType;
 
+typedef struct McASMCycShDatType
+{	plcstring Variable[251];
+} McASMCycShDatType;
+
 typedef struct McASMShType
 {	unsigned short MaximumCount;
 	unsigned short MaximumDelegatedCommandCount;
@@ -1974,6 +2071,7 @@ typedef struct McASMShType
 	struct McASMShColAvType CollisionAvoidance;
 	struct McASMShCplgType Coupling;
 	struct McASMShBaReDatType BackupAndRestoreData;
+	struct McASMCycShDatType CyclicShuttleData;
 } McASMShType;
 
 typedef struct McASMAsmFeatType
@@ -2056,6 +2154,14 @@ typedef struct McCfgAsmColAvoidVirtShScope
 typedef struct McCfgAsmBaReShDatType
 {	struct McASMShBaReDatType BackupAndRestoreData;
 } McCfgAsmBaReShDatType;
+
+typedef struct McCfgAsmCycShDatType
+{	struct McASMCycShDatType CyclicShuttleData;
+} McCfgAsmCycShDatType;
+
+typedef struct McCfgAsmCycSegDatType
+{	struct McASMCycSegDatType CyclicSegmentData;
+} McCfgAsmCycSegDatType;
 
 typedef struct McAFCCplgObjType
 {	plcstring Name[251];
@@ -2201,9 +2307,14 @@ typedef struct McAFSSRSetWidType
 {	double Width;
 } McAFSSRSetWidType;
 
+typedef struct McAFSSRSetShiftType
+{	double Shift;
+} McAFSSRSetShiftType;
+
 typedef struct McAFSSRSetType
 {	struct McAFSSRSetLenType Length;
 	struct McAFSSRSetWidType Width;
+	struct McAFSSRSetShiftType Shift;
 } McAFSSRSetType;
 
 typedef struct McCfgAsmFeatShShpRegType
@@ -2346,9 +2457,14 @@ typedef struct McSSTCAIMDUseExpValWidType
 {	double Width;
 } McSSTCAIMDUseExpValWidType;
 
+typedef struct McSSTCAIMDUseExpValShiftType
+{	double Shift;
+} McSSTCAIMDUseExpValShiftType;
+
 typedef struct McSSTCAIMDUseExpValType
 {	struct McSSTCAIMDUseExpValLenType Length;
 	struct McSSTCAIMDUseExpValWidType Width;
+	struct McSSTCAIMDUseExpValShiftType Shift;
 } McSSTCAIMDUseExpValType;
 
 typedef struct McSSTCAIMDType
@@ -2477,13 +2593,11 @@ typedef struct MpAssembly_AcpTrak
 	/* VAR_INPUT (analog) */
 	struct McAssemblyType* MpLink;
 	struct MpAsmParType Parameters;
-	struct MpAcpTrakComponentsType Shuttles;
-	struct MpAcpTrakComponentsType Segments;
+	struct McAcpTrakArrayType Shuttles;
 	float Override;
 	struct MpAsmAdvCmdType AdvancedCommands;
 	/* VAR_OUTPUT (analog) */
 	signed long StatusID;
-	enum McAcpTrakPLCopenStateEnum PLCopenState;
 	struct MpAsmInfoType Info;
 	/* VAR (analog) */
 	struct McInternalType Internal;
@@ -4072,6 +4186,25 @@ typedef struct MC_BR_TrgPointReadInfo_AcpTrak
 	plcbit Error;
 } MC_BR_TrgPointReadInfo_AcpTrak_typ;
 
+typedef struct MC_BR_AsmListShuttles_AcpTrak
+{
+	/* VAR_INPUT (analog) */
+	struct McAssemblyType* Assembly;
+	struct McAcpTrakArrayType Indices;
+	struct McAcpTrakAsmListShAdvParType AdvancedParameters;
+	/* VAR_OUTPUT (analog) */
+	signed long ErrorID;
+	struct McAcpTrakAsmListShInfoType Info;
+	/* VAR (analog) */
+	struct McInternalType Internal;
+	/* VAR_INPUT (digital) */
+	plcbit Enable;
+	/* VAR_OUTPUT (digital) */
+	plcbit Valid;
+	plcbit Busy;
+	plcbit Error;
+} MC_BR_AsmListShuttles_AcpTrak_typ;
+
 
 
 /* Prototyping of functions and function blocks */
@@ -4159,6 +4292,7 @@ _BUR_PUBLIC void MC_BR_ShSetUserID_AcpTrak(struct MC_BR_ShSetUserID_AcpTrak* ins
 _BUR_PUBLIC void MC_BR_ShSwitchSector_AcpTrak(struct MC_BR_ShSwitchSector_AcpTrak* inst);
 _BUR_PUBLIC void MC_BR_TrgPointEnable_AcpTrak(struct MC_BR_TrgPointEnable_AcpTrak* inst);
 _BUR_PUBLIC void MC_BR_TrgPointReadInfo_AcpTrak(struct MC_BR_TrgPointReadInfo_AcpTrak* inst);
+_BUR_PUBLIC void MC_BR_AsmListShuttles_AcpTrak(struct MC_BR_AsmListShuttles_AcpTrak* inst);
 _BUR_PUBLIC unsigned short LLMInit(signed long sysInitPhase);
 
 

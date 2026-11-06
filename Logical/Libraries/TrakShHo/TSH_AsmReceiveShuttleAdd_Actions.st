@@ -53,6 +53,11 @@ ACTION TSH_AsmReceive_CheckInputs:
 			Error										:=	TRUE;
 			StatusID									:=	tshERR_BUFFER_WRONG_SIZE;
 			Internal.LoggerEntry.LoggerMessage			:=	'INPUT - The user data is bigger than the data send buffer';
+		ELSIF (UserDataSize > tshUSERDATA_MAX_SIZE) THEN
+			Active										:=	FALSE;
+			Error										:=	TRUE;
+			StatusID									:=	tshERR_BUFFER_WRONG_SIZE;
+			Internal.LoggerEntry.LoggerMessage			:=	'INPUT - The user data is bigger than the maximum queue record size (tshUSERDATA_MAX_SIZE)';
 		ELSIF (ADR(Parameter) = 0) THEN
 			Active										:=	FALSE;
 			Error										:=	TRUE;
@@ -167,6 +172,13 @@ ACTION TSH_AsmReceive_ProcessInit:
 	Internal.Process.fbSecAddShuttle.AdvancedParameters.MoveCmd					:=	mcACPTRAK_MOV_CMD_ELASTICMOVEVEL;
 	Internal.Process.fbSecAddShuttle.AdvancedParameters.Mode					:=	mcACPTRAK_ADD_CATCH;
 	
+	(* Second catch FB, handled alongside fbSecAddShuttle in TSH_AsmReceive_Process *)
+	Internal.Process.fbSecAddShuttle_2.Sector									:=	ADR(Sector);
+	Internal.Process.fbSecAddShuttle_2.Orientation								:=	mcDIR_POSITIVE;
+	Internal.Process.fbSecAddShuttle_2.Position									:=	Internal.Parameter.CatchPosition;
+	Internal.Process.fbSecAddShuttle_2.AdvancedParameters.MoveCmd				:=	mcACPTRAK_MOV_CMD_ELASTICMOVEVEL;
+	Internal.Process.fbSecAddShuttle_2.AdvancedParameters.Mode					:=	mcACPTRAK_ADD_CATCH;
+	
 	Internal.Process.fbRoutedMoveAbs.Axis										:= ADR(Internal.Process.ShuttleRef);
 	Internal.Process.fbRoutedMoveAbs.Sector										:= ADR(Internal.Parameter.Target.Sector);
 	Internal.Process.fbRoutedMoveAbs.Position									:= Internal.Parameter.Target.Position;
@@ -176,6 +188,7 @@ ACTION TSH_AsmReceive_ProcessInit:
 	Internal.Process.fbRoutedMoveAbs.AdvancedParameters.StartDirection			:= Internal.Parameter.Target.StartDirection;
 	Internal.Process.fbRoutedMoveAbs.AdvancedParameters.EndDirection			:= Internal.Parameter.Target.EndDirection;
 	Internal.Process.fbRoutedMoveAbs.AdvancedParameters.ShuttleOrientation		:= Internal.Parameter.Target.ShuttleOrientation;
+	Internal.Process.fbRoutedMoveAbs.AdvancedParameters.SectorTransitionMode	:= mcACPTRAK_SECTOR_PREFER_USER;
 	
 	(* Initialize the recovery function blocks here as well *)
 	Internal.Recovery.fbReset.Axis												:=	ADR(Internal.Process.ShuttleRef);
@@ -185,16 +198,21 @@ ACTION TSH_AsmReceive_ProcessInit:
 	Internal.Recovery.fbSecGetShuttle.Sector									:=	ADR(Sector);
 	
 	Internal.Recovery.fbRoutedMoveAbs.Axis										:=	ADR(Internal.Process.ShuttleRef);
-	Internal.Recovery.fbRoutedMoveAbs.Acceleration								:=	Internal.Configuration.Movement.Acceleration;
-	Internal.Recovery.fbRoutedMoveAbs.Deceleration								:=	Internal.Configuration.Movement.Deceleration;
-	Internal.Recovery.fbRoutedMoveAbs.Velocity									:=	Internal.Configuration.Movement.Velocity;
-	Internal.Recovery.fbRoutedMoveAbs.Sector									:=	ADR(Sector);
-	(* Send it to the middle of Zone "Receive" to be sure it's far enough away from Zone "Handover" and the parallel area *)
-	Internal.Recovery.fbRoutedMoveAbs.Position									:=	Internal.ConfigCheck.SafetyZoneLength + tshRECOVERY_DISTANCE_TOLERANCE; 
+	Internal.Recovery.fbRoutedMoveAbs.Sector									:=	ADR(Internal.Parameter.Target.Sector);
+	Internal.Recovery.fbRoutedMoveAbs.Position									:=	Internal.Parameter.Target.Position;
+	Internal.Recovery.fbRoutedMoveAbs.Acceleration								:=	Internal.Parameter.Target.Acceleration;
+	Internal.Recovery.fbRoutedMoveAbs.Deceleration								:=	Internal.Parameter.Target.Deceleration;
+	Internal.Recovery.fbRoutedMoveAbs.Velocity									:=	Internal.Parameter.Target.Velocity;
+	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.StartDirection			:=	Internal.Parameter.Target.StartDirection;
+	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.EndDirection			:=	Internal.Parameter.Target.EndDirection;
+	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.ShuttleOrientation		:=	Internal.Parameter.Target.ShuttleOrientation;
+	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.SectorTransitionMode	:=	mcACPTRAK_SECTOR_PREFER_USER;
 	Internal.Recovery.fbRoutedMoveAbs.BufferMode								:=	mcABORTING;
-	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.StartDirection			:=	mcDIR_UNDEFINED;
-	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.EndDirection			:=	mcDIR_UNDEFINED;
-	Internal.Recovery.fbRoutedMoveAbs.AdvancedParameters.ShuttleOrientation		:=	mcDIR_UNDEFINED;
+	
+	Internal.Recovery.fbAsmPowerOn.AdvancedParameters.HomingMode 				:=	mcACPTRAK_HOME_ALL;
+	Internal.Recovery.fbAsmPowerOn.Assembly										:=	ADR(Assembly);
+	
+	Internal.Recovery.fbAsmReadInfo.Assembly									:=	ADR(Assembly);
 	
 	Internal.Recovery.fbAsmDeleteShuttle.Assembly								:=	ADR(Assembly);
 	Internal.Recovery.fbAsmDeleteShuttle.Axis									:=	ADR(Internal.Process.ShuttleRef);
@@ -210,6 +228,7 @@ END_ACTION
 ACTION TSH_AsmReceive_ProcessError:	
 	Internal.Process.fbShReadInfo.Enable			:=	FALSE;
 	Internal.Process.fbSecAddShuttle.Execute		:=	FALSE;
+	Internal.Process.fbSecAddShuttle_2.Execute		:=	FALSE;
 	Internal.Process.fbShResize.Execute				:=	FALSE;
 		
 	(* Reset the counter from response check *)				
@@ -226,6 +245,8 @@ ACTION TSH_AsmReceive_ProcessError:
 	Internal.Recovery.fbRoutedMoveAbs.Execute		:=	FALSE;
 	Internal.Recovery.fbAsmDeleteShuttle.Execute	:=	FALSE;
 	Internal.Recovery.fbTimer.IN					:=	FALSE;
+	Internal.Recovery.fbAsmPowerOn.Execute			:=	FALSE;
+	Internal.Recovery.fbAsmReadInfo.Enable			:=	FALSE;
 	Internal.Recovery.fbErrorCheckTimer.IN			:=	FALSE;
 END_ACTION
 
@@ -240,49 +261,135 @@ ACTION TSH_AsmReceive_Process:
 	Internal.Process.fbSecAddShuttle.AdvancedParameters.Velocity				:=	Internal.Parameter.Target.Velocity;
 	Internal.Process.fbSecAddShuttle.Execute									:=	NOT(Internal.Simulation.ArSim) OR Internal.Communication.DataReceive.ProcessCommands.0;
 	
-	CASE Internal.Process.Step OF
-		tshAR_WAIT_FOR_CATCH:
-			(* Wait for a shuttle to be caught at the CatchPosition *)
-			IF (Internal.Process.fbSecAddShuttle.Active) THEN
-				Internal.Process.ShuttleRef										:= Internal.Process.fbSecAddShuttle.Axis;
-				Internal.Process.fbSecAddShuttle.Execute						:= FALSE;
-				(* A shuttle was caught successfully *)
-				Internal.Communication.DataSend.ProcessStatus.8					:=	TRUE;				
-				(* Increase handover count by one *)
-				Internal.Info.HandoverCount										:=	Internal.Info.HandoverCount + 1;
-				(* Get the shuttle reference and ID for further internal use *)
-				Internal.Process.ShuttleRef										:=	Internal.Process.fbSecAddShuttle.Axis;
-				Internal.Process.ShuttleID										:=	Internal.Process.fbSecAddShuttle.ID;
-				(* Set info output, which shuttle was added *)
-				Internal.Info.Shuttle.Valid										:=	TRUE;
-				Internal.Info.Shuttle.ShuttleRef								:=	Internal.Process.ShuttleRef;
-				Internal.Info.Shuttle.ShuttleID									:=	Internal.Process.ShuttleID;
-				Internal.Info.Shuttle.Action									:=	tshSHUTTLE_ACTION_ADDED;
-				(* Copy userdata to the shuttle *)
-				TSH_ShuttleCopyUserData;
-				(* Change the step *)					
-				Internal.Process.Step											:=	tshAR_MOVE_SHUTTLE;
-			ELSIF (Internal.Process.fbSecAddShuttle.Error) THEN
-				(* Display an error *)
-				Active															:=	FALSE;
-				Error															:=	TRUE;
-				StatusID														:=	tshERR_INTERNAL;
-				Internal.LoggerEntry.LoggerMessage								:=	'HANDOVER - Catching a shuttle was not successful';		
-				TSH_WriteLoggerEntry;	
+	Internal.Process.fbSecAddShuttle_2.AdvancedParameters.Acceleration			:=	Internal.Parameter.Target.Acceleration;
+	Internal.Process.fbSecAddShuttle_2.AdvancedParameters.Deceleration			:=	Internal.Parameter.Target.Deceleration;
+	Internal.Process.fbSecAddShuttle_2.AdvancedParameters.Velocity				:=	Internal.Parameter.Target.Velocity;
+	Internal.Process.fbSecAddShuttle_2.Execute									:=	NOT(Internal.Simulation.ArSim);
+	
+	(* FIFO push: store the userdata of a new shuttle. Handshake: DataReceive.ProcessCommands.1 (NewShuttleData) from AsmSend, answered by DataSend.ProcessStatus.13 (DataAck) *)
+	IF (Internal.Communication.DataReceive.ProcessCommands.1) AND NOT(Internal.Communication.DataSend.ProcessStatus.13) THEN		
+		(* Queue full: drop the oldest record *)
+		IF (Internal.Process.DataQueue.Count >= tshDATA_QUEUE_SIZE) THEN
+			Internal.Process.DataQueue.Tail										:=	(Internal.Process.DataQueue.Tail + 1) MOD tshDATA_QUEUE_SIZE;
+			Internal.Process.DataQueue.Count									:=	Internal.Process.DataQueue.Count - 1;
+			Internal.LoggerEntry.LoggerMessage									:=	'HANDOVER - Userdata queue full, oldest userdata record was dropped';
+			TSH_WriteLoggerEntry;
+		END_IF
+		
+		(* Store the userdata record and its size at the head of the queue *)
+		brsmemcpy(ADR(Internal.Process.DataQueue.Buffer[USINT_TO_UINT(Internal.Process.DataQueue.Head) * tshUSERDATA_MAX_SIZE]), Internal.Communication.DataReceiveAddress + tshTO_RECEIVER_BUFFER_SIZE + 1, Internal.Communication.UserDataSize);
+		Internal.Process.DataQueue.SizeArray[Internal.Process.DataQueue.Head]	:=	Internal.Communication.UserDataSize;
+		Internal.Process.DataQueue.Head										:=	(Internal.Process.DataQueue.Head + 1) MOD tshDATA_QUEUE_SIZE;
+		Internal.Process.DataQueue.Count									:=	Internal.Process.DataQueue.Count + 1;
+		
+		(* Acknowledge the stored record *)
+		Internal.Communication.DataSend.ProcessStatus.13						:=	TRUE;
+	ELSIF NOT(Internal.Communication.DataReceive.ProcessCommands.1) THEN
+		(* AsmSend has reset the command, so the acknowledge can be reset *)
+		Internal.Communication.DataSend.ProcessStatus.13						:=	FALSE;
+	END_IF
+	
+	IF (Internal.Process.fbSecAddShuttle.Active) AND NOT(Internal.Process.fbSecAddShuttleActiveOld) THEN
+		Internal.Communication.DataReceive.ProcessCommands.0					:=	FALSE;
+		Internal.Process.fbSecAddShuttle.Execute								:= FALSE;	
+		
+		(* Get the shuttle reference and ID for further internal use *)
+		Internal.Process.ShuttleID												:= Internal.Process.fbSecAddShuttle.ID;
+		Internal.Process.TempShuttle											:= Internal.Process.fbSecAddShuttle.Axis;
+		
+		Internal.Process.ShuttleAdded											:= TRUE;
+	
+		(* Set info output, which shuttle was added *)
+		Internal.Info.Shuttle.Valid												:=	TRUE;
+		Internal.Info.Shuttle.ShuttleRef										:=	Internal.Process.fbSecAddShuttle.Axis;
+		Internal.Info.Shuttle.ShuttleID											:=	Internal.Process.ShuttleID;
+		Internal.Info.Shuttle.Action											:=	tshSHUTTLE_ACTION_ADDED;
+	ELSIF (Internal.Process.fbSecAddShuttle.Error) THEN
+		(* Display an error *)
+		Active																	:=	FALSE;
+		Error																	:=	TRUE;
+		StatusID																:=	tshERR_INTERNAL;
+		Internal.LoggerEntry.LoggerMessage										:=	'HANDOVER - Catching a shuttle was not successful';		
+		TSH_WriteLoggerEntry;	
 				
-				(* Set diagnostic info output *)
-				Internal.Info.Diagnosis.Valid									:=	TRUE;
-				Internal.Info.Diagnosis.Functionblock							:=	'MC_BR_SecAddShuttle_AcpTrak';
-				Internal.Info.Diagnosis.StatusID       							:=	Internal.Process.fbSecAddShuttle.ErrorID;
+		(* Set diagnostic info output *)
+		Internal.Info.Diagnosis.Valid											:=	TRUE;
+		Internal.Info.Diagnosis.Functionblock									:=	'MC_BR_SecAddShuttle_AcpTrak';
+		Internal.Info.Diagnosis.StatusID       									:=	Internal.Process.fbSecAddShuttle.ErrorID;
+	END_IF
+	
+	Internal.Process.fbSecAddShuttleActiveOld	:= Internal.Process.fbSecAddShuttle.Active;
+			
+	IF (Internal.Process.fbSecAddShuttle_2.Active) AND NOT(Internal.Process.fbSecAddShuttleActiveOld_2) THEN
+		Internal.Process.fbSecAddShuttle_2.Execute								:= FALSE;
+		
+		(* Get the shuttle reference and ID for further internal use *)
+		Internal.Process.ShuttleID												:= Internal.Process.fbSecAddShuttle_2.ID;
+		Internal.Process.TempShuttle											:= Internal.Process.fbSecAddShuttle_2.Axis;
+		
+		Internal.Process.ShuttleAdded											:= TRUE;
+					
+		(* Set info output, which shuttle was added *)
+		Internal.Info.Shuttle.Valid												:=	TRUE;
+		Internal.Info.Shuttle.ShuttleRef										:=	Internal.Process.fbSecAddShuttle_2.Axis;
+		Internal.Info.Shuttle.ShuttleID											:=	Internal.Process.ShuttleID;
+		Internal.Info.Shuttle.Action											:=	tshSHUTTLE_ACTION_ADDED;
+	ELSIF (Internal.Process.fbSecAddShuttle_2.Error) THEN
+		(* Display an error *)
+		Active																	:=	FALSE;
+		Error																	:=	TRUE;
+		StatusID																:=	tshERR_INTERNAL;
+		Internal.LoggerEntry.LoggerMessage										:=	'HANDOVER - Catching a shuttle was not successful';		
+		TSH_WriteLoggerEntry;	
+				
+		(* Set diagnostic info output *)
+		Internal.Info.Diagnosis.Valid											:=	TRUE;
+		Internal.Info.Diagnosis.Functionblock									:=	'MC_BR_SecAddShuttle_AcpTrak_2';
+		Internal.Info.Diagnosis.StatusID       									:=	Internal.Process.fbSecAddShuttle_2.ErrorID;
+	END_IF
+	
+	Internal.Process.fbSecAddShuttleActiveOld_2	:= Internal.Process.fbSecAddShuttle_2.Active;
+	
+	CASE Internal.Process.Step OF
+		tshAR_WAIT_FOR_SHUTTLE:
+			IF Internal.Process.ShuttleAdded THEN
+				Internal.Process.ShuttleAdded									:= FALSE;
+				Internal.Process.ShuttleRef										:= Internal.Process.TempShuttle;
+				
+				(* Copy the oldest userdata record of the queue to the shuttle *)
+				IF (Internal.Process.DataQueue.Count > 0) AND NOT(Internal.Simulation.ArSim) THEN
+					Internal.Process.fbShCopyUserData.DataAddress				:= ADR(Internal.Process.DataQueue.Buffer[USINT_TO_UINT(Internal.Process.DataQueue.Tail) * tshUSERDATA_MAX_SIZE]);
+					Internal.Process.fbShCopyUserData.DataSize					:= Internal.Process.DataQueue.SizeArray[Internal.Process.DataQueue.Tail];
+					Internal.Process.DataQueue.Tail								:=	(Internal.Process.DataQueue.Tail + 1) MOD tshDATA_QUEUE_SIZE;
+					Internal.Process.DataQueue.Count							:=	Internal.Process.DataQueue.Count - 1;
+					TSH_ShuttleCopyUserData;
+				ELSIF NOT(Internal.Simulation.ArSim) THEN
+					Internal.LoggerEntry.LoggerMessage							:=	'HANDOVER - No userdata record available for the caught shuttle';
+					TSH_WriteLoggerEntry;
+				END_IF
+				
+				Internal.Process.Step											:= tshAR_MOVE_SHUTTLE;
 			END_IF
 		
-		(* Move the shuttle to the given end position *)
+			(* Move the shuttle to the given end position *)
 		tshAR_MOVE_SHUTTLE:
 			Internal.Process.fbRoutedMoveAbs.Execute							:= TRUE;
 			IF Internal.Process.fbRoutedMoveAbs.Active AND NOT(Internal.Process.RoutedMoveAbsActiveOld) THEN
 				Internal.Process.fbRoutedMoveAbs.Execute						:= FALSE;			
 				(* Change the step *)					
-				Internal.Process.Step											:=	tshAR_WAIT_CONFIRMATION;
+				(* Movement already started by SecAddShuttleWithMovement - check if resize is needed *)
+				IF (Internal.Parameter.ShuttleSize.EnableResize = tshSHUTTLE_RESIZE_ENABLE) THEN
+					(* Resize the shuttle to the needed size *)
+					Internal.Process.fbShResize.ResizeParameter.ExtentToFront	:=	Internal.Parameter.ShuttleSize.ExtendToFront;
+					Internal.Process.fbShResize.ResizeParameter.ExtentToBack	:=	Internal.Parameter.ShuttleSize.ExtendToBack;					
+					Internal.Process.fbShResize.ResizeParameter.Width			:=	Internal.Parameter.ShuttleSize.Width;	
+					Internal.Process.fbShResize.Execute							:=	TRUE;	
+					(* Change step *)
+					Internal.Process.Step										:=	tshAR_RESIZE_SHUTTLE;
+				ELSE
+					(* Handover procedure done successfully *)
+					Internal.Process.Step										:=	tshAR_WAIT_FOR_SHUTTLE;
+				END_IF
 			ELSIF (Internal.Process.fbRoutedMoveAbs.Error) THEN
 				(* Display an error *)
 				Active															:=	FALSE;
@@ -296,39 +403,13 @@ ACTION TSH_AsmReceive_Process:
 				Internal.Info.Diagnosis.Functionblock							:=	'MC_BR_RoutedMoveAbs_AcpTrak';
 				Internal.Info.Diagnosis.StatusID       							:=	Internal.Process.fbRoutedMoveAbs.ErrorID;
 			END_IF;
-			
-			
-		tshAR_WAIT_CONFIRMATION:			
-			Internal.ResponseTimeoutCheck.Response								:=	Internal.Communication.DataReceive.ProcessStatus.8; 	(* Shuttle was deleted successfully *)
-			TSH_CheckResponseTimeout;
-			
-			IF (Internal.ResponseTimeoutCheck.Responded) THEN	(* Response came in time *)
-				(* Reset status *)
-				Internal.Communication.DataSend.ProcessStatus.8					:=	FALSE;
-				(* Movement already started by SecAddShuttleWithMovement - check if resize is needed *)
-				IF (Internal.Parameter.ShuttleSize.EnableResize = tshSHUTTLE_RESIZE_ENABLE) THEN
-					(* Resize the shuttle to the needed size *)
-					Internal.Process.fbShResize.ResizeParameter.ExtentToFront	:=	Internal.Parameter.ShuttleSize.ExtendToFront;
-					Internal.Process.fbShResize.ResizeParameter.ExtentToBack	:=	Internal.Parameter.ShuttleSize.ExtendToBack;					
-					Internal.Process.fbShResize.ResizeParameter.Width			:=	Internal.Parameter.ShuttleSize.Width;	
-					Internal.Process.fbShResize.Execute							:=	TRUE;	
-					(* Change step *)
-					Internal.Process.Step										:=	tshAR_RESIZE_SHUTTLE;
-				ELSE
-					(* Handover procedure done successfully *)
-					Internal.Process.Step										:=	tshAR_WAIT_FOR_CATCH;
-				END_IF
-			ELSIF (Error) THEN
-				(* In case of an error reset the process step*)
-				Internal.Process.Step											:=	tshAR_WAIT_FOR_CATCH;
-			END_IF		
 				
 		tshAR_RESIZE_SHUTTLE:
 			IF (Internal.Process.fbShResize.Done) THEN					
 				(* Reset the function block *)
 				Internal.Process.fbShResize.Execute								:=	FALSE;
 				(* Handover procedure done successfully - Movement mode *)
-				Internal.Process.Step											:=	tshAR_WAIT_FOR_CATCH;
+				Internal.Process.Step											:=	tshAR_WAIT_FOR_SHUTTLE;
 			ELSIF (Internal.Process.fbShResize.Error) THEN
 				(* Display an error *)
 				Active															:=	FALSE;
@@ -345,7 +426,7 @@ ACTION TSH_AsmReceive_Process:
 				(* Reset the function block *)
 				Internal.Process.fbShResize.Execute								:=	FALSE;
 				(* Change step *)
-				Internal.Process.Step											:=	tshAR_WAIT_FOR_CATCH;
+				Internal.Process.Step											:=	tshAR_WAIT_FOR_SHUTTLE;
 			END_IF			
 			
 	END_CASE	
@@ -358,6 +439,7 @@ ACTION TSH_AsmReceive_ProcessCallFBs:
 	Internal.Process.fbAsmReadStatus();
 	Internal.Process.fbShReadInfo();
 	Internal.Process.fbSecAddShuttle();
+	Internal.Process.fbSecAddShuttle_2();
 	Internal.Process.fbSecReadInfo();
 	Internal.Process.fbSecGetShuttle();
 	Internal.Process.fbShResize();
@@ -372,8 +454,11 @@ ACTION TSH_AsmReceive_ProcessCallFBs:
 	Internal.Recovery.fbReset();
 	Internal.Recovery.fbReadStatus();
 	Internal.Recovery.fbSecGetShuttle();
+	Internal.Recovery.RoutedMoveAbsActiveOld	:= Internal.Recovery.fbRoutedMoveAbs.Active;
 	Internal.Recovery.fbRoutedMoveAbs();
 	Internal.Recovery.fbAsmDeleteShuttle();
+	Internal.Recovery.fbAsmReadInfo();
+	Internal.Recovery.fbAsmPowerOn();
 	Internal.Recovery.fbTimer();
 	Internal.Recovery.fbErrorCheckTimer();
 END_ACTION
@@ -537,6 +622,7 @@ ACTION TSH_AsmReceive_ResetInDisabled:
 	Internal.Process.fbAsmReadStatus.Enable			:=	FALSE;
 	Internal.Process.fbShReadInfo.Enable			:=	FALSE;
 	Internal.Process.fbSecAddShuttle.Execute		:=	FALSE;
+	Internal.Process.fbSecAddShuttle_2.Execute		:=	FALSE;
 	Internal.Process.fbSecReadInfo.Enable			:=	FALSE;
 	Internal.Process.fbSecGetShuttle.Enable			:=	FALSE;	
 	Internal.Process.fbShResize.Execute				:=	FALSE;
@@ -552,6 +638,8 @@ ACTION TSH_AsmReceive_ResetInDisabled:
 	Internal.Recovery.fbSecStop.Execute				:=	FALSE;
 	Internal.Recovery.fbTimer.IN					:=	FALSE;
 	Internal.Recovery.fbErrorCheckTimer.IN			:=	FALSE;
+	Internal.Recovery.fbAsmReadInfo.Enable			:=	FALSE;
+	Internal.Recovery.fbAsmPowerOn.Execute			:=	FALSE;
 	
 	(* Call the function blocks *)
 	TSH_AsmReceive_ProcessCallFBs;
@@ -808,7 +896,7 @@ ACTION TSH_AsmReceive_ErrorReaction:
 	Internal.ErrorCheck.ErrorDetectedOld						:=	Internal.ErrorCheck.ErrorDetected;
 	
 	(* Start the timer for error detection, which is needed to ensure no shuttles are passing the trigger point anymore *)
-	Internal.ErrorCheck.fbTimerError.IN							:=	Internal.ErrorCheck.ErrorDetected AND (Internal.Process.Step = tshAR_WAIT_FOR_CATCH);
+	Internal.ErrorCheck.fbTimerError.IN							:=	Internal.ErrorCheck.ErrorDetected AND (Internal.Process.Step = tshAR_WAIT_FOR_SHUTTLE);
 	Internal.ErrorCheck.fbTimerError.PT							:=	tshERROR_CHECK_TIME;
 	(* Call the function block *)
 	Internal.ErrorCheck.fbTimerError();	
@@ -895,9 +983,7 @@ ACTION TSH_AsmReceive_SimulateCommInterface:
 		Internal.Communication.DataReceive.ProcessCommands.0				:=	TRUE; (* Command to add a shuttle *)
 	END_IF
 	Internal.Simulation.SimAddShuttleOld									:=	SimAddShuttle;
-	IF (Internal.Communication.DataSend.ProcessStatus.8) THEN
-		Internal.Communication.DataReceive.ProcessCommands.0				:=	FALSE; (* Command to add a shuttle *)
-	END_IF
+	(* Sim catch request is cleared in TSH_AsmReceive_Process *)
 	
 	Internal.Communication.DataReceive.ProcessCommands.4					:=	FALSE;	(* TransferArea Monitoring *)
 	Internal.Communication.DataReceive.UserDataSize							:=	Internal.Communication.DataSend.UserDataSize; (* Userdata Size *)
@@ -910,7 +996,7 @@ ACTION TSH_AsmReceive_SimulateCommInterface:
 	Internal.Communication.DataReceive.ProcessStatus.5						:=	Internal.Communication.DataSend.ProcessStatus.5;	(* Running *)
 	Internal.Communication.DataReceive.ProcessStatus.6						:=	(Internal.State = tshSTATE_ON_HOLD) OR (Internal.State = tshSTATE_ERROR);	(* On hold *)
 	Internal.Communication.DataReceive.ProcessStatus.7						:=	FALSE;	(* Error *)
-	Internal.Communication.DataReceive.ProcessStatus.8						:=	Internal.Communication.DataSend.ProcessStatus.8;	(* Shuttle deleted successfully *)
+	Internal.Communication.DataReceive.ProcessStatus.8						:=	FALSE;	(* FREE *)
 	Internal.Communication.DataReceive.ProcessStatus.9						:=	FALSE;	(* FREE *)
 	Internal.Communication.DataReceive.ProcessStatus.10						:=	Internal.Communication.DataSend.ProcessCommands.3;	(* Handover paused *)
 	Internal.Communication.DataReceive.ProcessStatus.11						:=	FALSE;	(* Recovery needed *)
@@ -980,17 +1066,8 @@ ACTION TSH_AsmReceive_Recovery:
 			(* Send the actual zone number *)
 			Internal.Communication.DataSend.RecoveryInfo.CurrentZone.1		:=	TRUE;
 			
-			CASE Internal.RecoverySequence.SequenceStep OF
-				0:	(* Check if we have a shuttle in process *)
-					IF Internal.Process.ShuttleRef.controlif <> 0 THEN
-						(* Shuttle found in process - reset it *)
-						Internal.RecoverySequence.SequenceStep				:=	10;
-					ELSE
-						(* No shuttle in process - search for one *)
-						Internal.RecoverySequence.SequenceStep				:=	5;
-					END_IF
-					
-				5:	(* SecGetShuttle - search for shuttles on sector *)
+			CASE Internal.RecoverySequence.SequenceStep OF					
+				0:	(* SecGetShuttle - search for shuttles on sector *)
 					(* Configure search parameters *)
 					Internal.Recovery.fbSecGetShuttle.Sector				:=	ADR(Sector);
 					Internal.Recovery.fbSecGetShuttle.Mode					:=	mcACPTRAK_SEARCH_FORWARD;
@@ -1023,7 +1100,6 @@ ACTION TSH_AsmReceive_Recovery:
 					IF NOT(Internal.Recovery.ShuttleResetDone) THEN
 						Internal.Recovery.fbReset.Axis						:=	ADR(Internal.Process.ShuttleRef);
 						Internal.Recovery.fbReset.Execute					:=	TRUE;
-						Internal.Recovery.fbReset();
 						
 						IF Internal.Recovery.fbReset.Done THEN
 							Internal.Recovery.fbReset.Execute				:=	FALSE;
@@ -1038,16 +1114,9 @@ ACTION TSH_AsmReceive_Recovery:
 					END_IF
 					
 				20:	(* MC_BR_RoutedMoveAbs - start movement to target, don't wait for completion *)
-					Internal.Recovery.fbRoutedMoveAbs.Axis					:=	ADR(Internal.Process.ShuttleRef);
-					Internal.Recovery.fbRoutedMoveAbs.Sector				:=	ADR(Internal.Parameter.Target.Sector);
-					Internal.Recovery.fbRoutedMoveAbs.Position				:=	Internal.Parameter.Target.Position;
-					Internal.Recovery.fbRoutedMoveAbs.Velocity				:=	Internal.Parameter.Target.Velocity;
-					Internal.Recovery.fbRoutedMoveAbs.Acceleration			:=	Internal.Parameter.Target.Acceleration;
-					Internal.Recovery.fbRoutedMoveAbs.Deceleration			:=	Internal.Parameter.Target.Deceleration;
 					Internal.Recovery.fbRoutedMoveAbs.Execute				:=	TRUE;
-					Internal.Recovery.fbRoutedMoveAbs();
 					
-					IF Internal.Recovery.fbRoutedMoveAbs.Active THEN
+					IF Internal.Recovery.fbRoutedMoveAbs.Active AND NOT(Internal.Recovery.RoutedMoveAbsActiveOld) THEN
 						(* Movement started - proceed to next shuttle immediately *)
 						Internal.Recovery.fbRoutedMoveAbs.Execute			:=	FALSE;
 						Internal.Recovery.ShuttleResetDone					:=	FALSE;
@@ -1059,31 +1128,29 @@ ACTION TSH_AsmReceive_Recovery:
 						Internal.RecoverySequence.SequenceStep				:=	30;
 					END_IF
 					
-				30:	(* Check for next shuttle using fbSecGetShuttle.Next *)
-					IF Internal.Recovery.fbSecGetShuttle.Valid THEN
-						(* Still enabled, get next *)
+				30:	(* Pulse fbSecGetShuttle.Next only if shuttles remain *)
+					IF Internal.Recovery.fbSecGetShuttle.Valid AND (Internal.Recovery.fbSecGetShuttle.RemainingCount > 0) THEN
 						Internal.Recovery.fbSecGetShuttle.Next				:=	TRUE;
 						Internal.Recovery.fbSecGetShuttle();
-						
-						IF Internal.Recovery.fbSecGetShuttle.Valid AND NOT Internal.Recovery.fbSecGetShuttle.RemainingCount = 0 THEN
-							(* More shuttles - process them *)
-							Internal.Process.ShuttleRef						:=	Internal.Recovery.fbSecGetShuttle.Axis;
-							Internal.Recovery.fbSecGetShuttle.Next			:=	FALSE;
-							Internal.RecoverySequence.SequenceStep			:=	10;
-						ELSE
-							(* No more shuttles *)
-							Internal.Recovery.fbSecGetShuttle.Enable		:=	FALSE;
-							Internal.Recovery.fbSecGetShuttle.Next			:=	FALSE;
-							Internal.RecoverySequence.SequenceStep			:=	50;
-						END_IF
-					ELSE
-						(* Not valid anymore - move to wait for Send *)
+						Internal.Recovery.fbSecGetShuttle.Next				:=	FALSE;
+						Internal.Process.ShuttleRef							:=	Internal.Recovery.fbSecGetShuttle.Axis;
+						Internal.RecoverySequence.SequenceStep				:=	10;
+					ELSIF Internal.Recovery.fbSecGetShuttle.Valid THEN
+						(* No more shuttles *)
 						Internal.Recovery.fbSecGetShuttle.Enable			:=	FALSE;
 						Internal.RecoverySequence.SequenceStep				:=	50;
+					ELSIF Internal.Recovery.fbSecGetShuttle.Error THEN
+						Internal.Recovery.fbSecGetShuttle.Enable			:=	FALSE;
+						Internal.Recovery.fbSecGetShuttle();
+						Internal.Info.Diagnosis.Valid						:=	TRUE;
+						Internal.Info.Diagnosis.Functionblock				:=	'MC_BR_SecGetShuttle_AcpTrak';
+						Internal.LoggerEntry.LoggerMessage					:=	'RECOVERY - Search for shuttles on the sector failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
 					END_IF
 					
 				50:	(* All shuttles processed - go to catching state to receive shuttles from Send *)
-					Internal.Recovery.State									:=	tshRECOVERY_CATCHING;
+					Internal.Recovery.State									:=	tshRECOVERY_HOME_AND_FIND;
+					Internal.RecoverySequence.SequenceStep					:=	0;
 			END_CASE
 			
 		tshRECOVERY_CATCHING:
@@ -1095,7 +1162,146 @@ ACTION TSH_AsmReceive_Recovery:
 				(* Send has finished - proceed to done *)
 				Internal.Communication.DataSend.RecoveryInfo.CurrentZone.5	:=	FALSE;
 				Internal.Recovery.State										:=	tshRECOVERY_DONE;
+				Internal.RecoverySequence.SequenceStep						:=	0;
 			END_IF
+			
+		tshRECOVERY_HOME_AND_FIND:
+			(* Before catching: power on the sector (homing), find shuttles which were not caught, assign userdata and move them to target *)
+			CASE Internal.RecoverySequence.SequenceStep OF
+				0:
+					Internal.Recovery.fbAsmReadInfo.AdvancedParameters.SegmentGroup	:=	Internal.ConfigCheck.SectorName;
+					Internal.Recovery.fbAsmReadInfo.Enable				:= TRUE;
+					IF Internal.Recovery.fbAsmReadInfo.Valid AND NOT(Internal.Recovery.fbAsmReadInfo.AssemblyInfo.MovementDetected) THEN
+						Internal.Recovery.fbAsmReadInfo.Enable			:= FALSE;
+						Internal.RecoverySequence.SequenceStep			:=	10;
+					ELSIF Internal.Recovery.fbAsmReadInfo.Error THEN
+						Internal.Recovery.fbAsmReadInfo.Enable			:=	FALSE;
+						Internal.Info.Diagnosis.Valid					:=	TRUE;
+						Internal.Info.Diagnosis.Functionblock			:=	'MC_BR_AsmReadInfo_AcpTrak';
+						Internal.Info.Diagnosis.StatusID				:=	Internal.Recovery.fbAsmReadInfo.ErrorID;
+						Internal.LoggerEntry.LoggerMessage				:=	'RECOVERY - Reading assembly info failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
+					END_IF;
+				
+				10:	(* Power on the sector, the sector name is used as segment group *)
+					Internal.Recovery.fbAsmPowerOn.AdvancedParameters.SegmentGroup	:=	Internal.ConfigCheck.SectorName;
+					Internal.Recovery.fbAsmPowerOn.Execute				:=	TRUE;
+					IF Internal.Recovery.fbAsmPowerOn.Done THEN
+						Internal.Recovery.fbAsmPowerOn.Execute			:=	FALSE;
+						Internal.RecoverySequence.SequenceStep			:=	20;
+					ELSIF Internal.Recovery.fbAsmPowerOn.Error THEN
+						Internal.Recovery.fbAsmPowerOn.Execute			:=	FALSE;
+						Internal.Info.Diagnosis.Valid					:=	TRUE;
+						Internal.Info.Diagnosis.Functionblock			:=	'MC_BR_AsmPowerOn_AcpTrak';
+						Internal.Info.Diagnosis.StatusID				:=	Internal.Recovery.fbAsmPowerOn.ErrorID;
+						Internal.LoggerEntry.LoggerMessage				:=	'RECOVERY - Power on of the sector failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
+					END_IF
+					
+				20:	(* SecGetShuttle backward: first found shuttle holds the oldest userdata *)
+					Internal.Recovery.fbSecGetShuttle.Sector			:=	ADR(Sector);
+					Internal.Recovery.fbSecGetShuttle.Mode				:=	mcACPTRAK_SEARCH_BACKWARD;
+					Internal.Recovery.fbSecGetShuttle.AdvancedParameters.SelectionMode	:=	mcACPTRAK_GET_SH_ALL;
+					Internal.Recovery.fbSecGetShuttle.AdvancedParameters.StartPosition	:=	0.0;
+					Internal.Recovery.fbSecGetShuttle.AdvancedParameters.EndPosition	:=	0.0;
+					Internal.Recovery.fbSecGetShuttle.Enable			:=	TRUE;
+					Internal.Recovery.fbSecGetShuttle();
+					
+					IF Internal.Recovery.fbSecGetShuttle.Valid AND Internal.Recovery.fbSecGetShuttle.TotalCount <> 0 THEN
+						(* Shuttle not caught found - process it *)
+						Internal.Process.ShuttleRef						:=	Internal.Recovery.fbSecGetShuttle.Axis;
+						Internal.Recovery.ShuttleResetDone				:=	FALSE;
+						Internal.RecoverySequence.SequenceStep			:=	30;
+					ELSIF Internal.Recovery.fbSecGetShuttle.Valid THEN
+						(* No shuttle found: nothing was left in the queue, recovery is finished *)
+						Internal.Recovery.fbSecGetShuttle.Enable		:=	FALSE;
+						Internal.Recovery.fbSecGetShuttle();
+						Internal.RecoverySequence.SequenceStep			:=	0;
+						Internal.Recovery.State							:=	tshRECOVERY_CATCHING;
+					ELSIF Internal.Recovery.fbSecGetShuttle.Error THEN
+						Internal.Recovery.fbSecGetShuttle.Enable		:=	FALSE;
+						Internal.Recovery.fbSecGetShuttle();
+						Internal.Info.Diagnosis.Valid					:=	TRUE;
+						Internal.Info.Diagnosis.Functionblock			:=	'MC_BR_SecGetShuttle_AcpTrak';
+						Internal.LoggerEntry.LoggerMessage				:=	'RECOVERY - Search for shuttles on the sector failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
+					END_IF
+					
+				30:	(* MC_Reset - reset shuttle error if any *)
+					IF NOT(Internal.Recovery.ShuttleResetDone) THEN
+						Internal.Recovery.fbReset.Axis					:=	ADR(Internal.Process.ShuttleRef);
+						Internal.Recovery.fbReset.Execute				:=	TRUE;
+						IF Internal.Recovery.fbReset.Done OR Internal.Recovery.fbReset.Error THEN
+							Internal.Recovery.fbReset.Execute			:=	FALSE;
+							Internal.Recovery.ShuttleResetDone			:=	TRUE;
+						END_IF
+					ELSE
+						Internal.RecoverySequence.SequenceStep			:=	40;
+					END_IF
+					
+				40:	(* Assign the oldest userdata record of the queue to the shuttle (one record is used only once) *)
+					IF (Internal.Communication.UserDataSize > 0) AND (Internal.Process.DataQueue.Count > 0) THEN
+						Internal.Process.fbShCopyUserData.DataAddress	:=	ADR(Internal.Process.DataQueue.Buffer[USINT_TO_UINT(Internal.Process.DataQueue.Tail) * tshUSERDATA_MAX_SIZE]);
+						Internal.Process.fbShCopyUserData.DataSize		:=	Internal.Process.DataQueue.SizeArray[Internal.Process.DataQueue.Tail];
+						Internal.Process.DataQueue.Tail					:=	(Internal.Process.DataQueue.Tail + 1) MOD tshDATA_QUEUE_SIZE;
+						Internal.Process.DataQueue.Count				:=	Internal.Process.DataQueue.Count - 1;
+						Internal.RecoverySequence.SequenceStep			:=	45;
+					ELSE
+						(* No userdata left in the queue, the shuttle is only moved *)
+						Internal.RecoverySequence.SequenceStep			:=	50;
+					END_IF
+					
+				45:	(* Write the userdata to the shuttle *)
+					TSH_ShuttleCopyUserData;
+					IF Internal.Process.fbShCopyUserData.Done THEN
+						Internal.RecoverySequence.SequenceStep			:=	50;
+					ELSIF Internal.Process.fbShCopyUserData.Error THEN
+						Internal.LoggerEntry.LoggerMessage				:=	'RECOVERY - Writing userdata to the shuttle failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
+					END_IF
+					
+				50:	(* MC_BR_RoutedMoveAbs - start the movement to the target, do not wait for completion *)
+					Internal.Recovery.fbRoutedMoveAbs.Axis			:=	ADR(Internal.Process.ShuttleRef);
+					Internal.Recovery.fbRoutedMoveAbs.Sector		:=	ADR(Internal.Parameter.Target.Sector);
+					Internal.Recovery.fbRoutedMoveAbs.Position		:=	Internal.Parameter.Target.Position;
+					Internal.Recovery.fbRoutedMoveAbs.Velocity		:=	Internal.Parameter.Target.Velocity;
+					Internal.Recovery.fbRoutedMoveAbs.Acceleration	:=	Internal.Parameter.Target.Acceleration;
+					Internal.Recovery.fbRoutedMoveAbs.Deceleration	:=	Internal.Parameter.Target.Deceleration;
+					Internal.Recovery.fbRoutedMoveAbs.Execute		:=	TRUE;
+					IF Internal.Recovery.fbRoutedMoveAbs.Active AND NOT(Internal.Recovery.RoutedMoveAbsActiveOld) THEN
+						Internal.Recovery.fbRoutedMoveAbs.Execute	:=	FALSE;
+						Internal.RecoverySequence.SequenceStep		:=	60;
+					ELSIF Internal.Recovery.fbRoutedMoveAbs.Error THEN
+						Internal.Recovery.fbRoutedMoveAbs.Execute	:=	FALSE;
+						Internal.Info.Diagnosis.Valid				:=	TRUE;
+						Internal.Info.Diagnosis.Functionblock		:=	'MC_BR_RoutedMoveAbs_AcpTrak';
+						Internal.Info.Diagnosis.StatusID			:=	Internal.Recovery.fbRoutedMoveAbs.ErrorID;
+						Internal.LoggerEntry.LoggerMessage			:=	'RECOVERY - Moving the found shuttle to the target failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
+					END_IF
+					
+				60:	(* Next shuttle of the search list, the moved shuttle is skipped *)
+					IF Internal.Recovery.fbSecGetShuttle.RemainingCount > 0 THEN
+						Internal.Recovery.fbSecGetShuttle.Next		:=	TRUE;
+						Internal.Recovery.fbSecGetShuttle();
+						Internal.Recovery.fbSecGetShuttle.Next		:=	FALSE;
+						Internal.Process.ShuttleRef					:=	Internal.Recovery.fbSecGetShuttle.Axis;
+						Internal.Recovery.ShuttleResetDone			:=	FALSE;
+						Internal.RecoverySequence.SequenceStep		:=	30;
+					ELSIF Internal.Recovery.fbSecGetShuttle.Valid THEN
+						(* No further shuttle: disable the search and continue with catching *)
+						Internal.Recovery.fbSecGetShuttle.Enable	:=	FALSE;
+						Internal.RecoverySequence.SequenceStep		:=	0;
+						Internal.Recovery.State						:=	tshRECOVERY_CATCHING;
+					ELSIF Internal.Recovery.fbSecGetShuttle.Error THEN
+						Internal.Recovery.fbSecGetShuttle.Enable	:=	FALSE;
+						Internal.Recovery.fbSecGetShuttle();
+						Internal.Info.Diagnosis.Valid				:=	TRUE;
+						Internal.Info.Diagnosis.Functionblock		:=	'MC_BR_SecGetShuttle_AcpTrak';
+						Internal.LoggerEntry.LoggerMessage			:=	'RECOVERY - Search for shuttles on the sector failed (Details see Motion Logger)';
+						TSH_AsmReceive_RecoveryFail;
+					END_IF
+			END_CASE
 			
 		tshRECOVERY_DONE:			
 			(* Send the actual zone number *)
@@ -1116,28 +1322,71 @@ END_ACTION
 
 (*################################################################################################################################################*)
 
+(* Common error handling of the recovery: the logger message and the diagnosis must be set before calling *)
+ACTION TSH_AsmReceive_RecoveryFail:
+	Active																	:=	FALSE;
+	Error																	:=	TRUE;
+	StatusID																:=	tshERR_RECOVERY;
+	TSH_WriteLoggerEntry;
+	Internal.Info.Recovery.RecoveryIdle										:=	FALSE;
+	Internal.Info.Recovery.RecoveryActive									:=	FALSE;
+	Internal.Info.Recovery.RecoveryFailed									:=	TRUE;
+	Internal.Recovery.fbSecGetShuttle.Enable								:=	FALSE;
+	Internal.Recovery.fbReset.Execute										:=	FALSE;
+	Internal.Recovery.fbRoutedMoveAbs.Execute								:=	FALSE;
+	Internal.Recovery.fbAsmPowerOn.Execute									:=	FALSE;
+	Internal.RecoverySequence.SequenceStep									:=	0;
+	Internal.Recovery.State													:=	tshRECOVERY_IDLE;
+	Internal.State															:=	tshSTATE_ERROR;
+END_ACTION
+
+(*################################################################################################################################################*)
+
 (* Abort catch mode before disabling the FUB - requires multiple cycles *)
 ACTION TSH_AsmReceive_AbortCatch:
-	CASE Internal.Process.AbortCatchStep OF
-		0: (* Check if abort needed *)
-			Internal.Process.AbortCatchDone									:=	FALSE;
-			IF Internal.Process.fbSecAddShuttle.Busy THEN
-				Internal.Process.fbSecAddShuttle.AdvancedParameters.Mode	:=	mcACPTRAK_ABORT_CATCH;
-				Internal.Process.fbSecAddShuttle.Execute					:=	FALSE;
+	IF Internal.Process.fbSecAddShuttle.Busy OR Internal.Process.fbSecAddShuttle_2.Busy OR Internal.Process.AbortCatchStep <> 0 THEN
+		CASE Internal.Process.AbortCatchStep OF
+			0: (* Check if abort needed *)
+				Internal.Process.AbortCatchDone									:=	FALSE;
+				IF Internal.Process.fbSecAddShuttle.Busy THEN
+					Internal.Process.fbSecAddShuttle.AdvancedParameters.Mode	:=	mcACPTRAK_ABORT_CATCH;
+					Internal.Process.fbSecAddShuttle.Execute					:=	FALSE;
+					Internal.Process.fbSecAddShuttle();
+					Internal.Process.AbortCatchStep								:=	5;
+				ELSE
+					Internal.Process.AbortCatchStep								:=	10;
+				END_IF
+				
+			5: (* Wait for abort complete *)
+				Internal.Process.fbSecAddShuttle.Execute						:=	TRUE;
 				Internal.Process.fbSecAddShuttle();
-				Internal.Process.AbortCatchStep								:=	1;
-			ELSE
-				Internal.Process.AbortCatchDone								:=	TRUE;
-			END_IF
+				IF Internal.Process.fbSecAddShuttle.Done THEN
+					Internal.Process.fbSecAddShuttle.Execute					:=	FALSE;
+					Internal.Process.fbSecAddShuttle.AdvancedParameters.Mode	:=	mcACPTRAK_ADD_CATCH;
+					Internal.Process.AbortCatchStep								:=	10;
+				END_IF
+				
+			10: (* Check if abort needed *)
+				IF Internal.Process.fbSecAddShuttle_2.Busy THEN
+					Internal.Process.fbSecAddShuttle_2.AdvancedParameters.Mode	:=	mcACPTRAK_ABORT_CATCH;
+					Internal.Process.fbSecAddShuttle_2.Execute					:=	FALSE;
+					Internal.Process.fbSecAddShuttle_2();
+					Internal.Process.AbortCatchStep								:=	15;
+				ELSE
+					Internal.Process.AbortCatchStep								:=	0;
+				END_IF
 			
-		1: (* Wait for abort complete *)
-			Internal.Process.fbSecAddShuttle.Execute						:=	TRUE;
-			Internal.Process.fbSecAddShuttle();
-			IF Internal.Process.fbSecAddShuttle.Done THEN
-				Internal.Process.fbSecAddShuttle.Execute					:=	FALSE;
-				Internal.Process.fbSecAddShuttle.AdvancedParameters.Mode	:=	mcACPTRAK_ADD_CATCH;
-				Internal.Process.AbortCatchDone								:=	TRUE;
-				Internal.Process.AbortCatchStep								:=	0;
-			END_IF
-	END_CASE
+			15: (* Wait for abort complete *)
+				Internal.Process.fbSecAddShuttle_2.Execute						:=	TRUE;
+				Internal.Process.fbSecAddShuttle_2();
+				IF Internal.Process.fbSecAddShuttle_2.Done THEN
+					Internal.Process.fbSecAddShuttle_2.Execute					:=	FALSE;
+					Internal.Process.fbSecAddShuttle_2.AdvancedParameters.Mode	:=	mcACPTRAK_ADD_CATCH;
+					Internal.Process.AbortCatchStep								:=	0;
+				END_IF
+		END_CASE
+	ELSE
+		Internal.Process.AbortCatchDone											:=	TRUE;
+		Internal.Process.AbortCatchStep											:=	0;
+	END_IF
 END_ACTION

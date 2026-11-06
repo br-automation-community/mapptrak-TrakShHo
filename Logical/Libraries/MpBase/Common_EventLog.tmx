@@ -3,7 +3,7 @@
   <header creationtool="B&amp;R Automation Studio" creationtoolversion="4.2" datatype="unknown" segtype="sentence" adminlang="en" srclang="en" o-tmf="TMX">
     <note>Do not change anything in this file, else the tmx-file will not be recognized as a valid system text anymore</note>
     <prop type="x-BR-TS:Namespace">BR/EventLog</prop>
-    <prop type="x-BR-TS:systemtextsig">a2FhjdRe34F6eZnHLh5zOTOUuuwgRHMA87RMRgAvWUlwhA1bU4pwEjK+DwBIxRnxxSwMl8iOSG06+H08Kcv40r2M+Dw/OS9e1p4s4SNcs8hD/L1Y6A9TojT9a+hyS6mPh7YuOM7S/8b1OifhGODbu6gjLFk9Pdcm8EuhimXw0Xk=</prop>
+    <prop type="x-BR-TS:systemtextsig">BF5a7dq1HQHPwp22xewCkWfiD66yjQRCJRUdbTH2aonAG7TVkAspFZnPIguzy2fMlRH7B9X7BFjo7WPNWwpdZJHHYpeRAy40PjJQIoh9+SEx+/+iRVGCebVUzLhlaBet9JmEMt5BToy02OWQS3/1795iBbo9fVVdbnJnhI38m58=</prop>
   </header>
   <body>
     <tu tuid="1083180007">
@@ -852,6 +852,14 @@
       </tuv>
       <tuv xml:lang="de">
         <seg>Komponente {2} ist im Fehlerzustand</seg>
+      </tuv>
+    </tu>
+    <tu tuid="-2137980912">
+      <tuv xml:lang="en">
+        <seg>Invalid task class #{2} was selected.</seg>
+      </tuv>
+      <tuv xml:lang="de">
+        <seg>Ungültige Taskklasse #{2} ausgewählt.</seg>
       </tuv>
     </tu>
   </body>

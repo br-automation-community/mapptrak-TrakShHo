@@ -174,6 +174,7 @@ TYPE
 		Acceleration : REAL; (*Maximum acceleration [Measurement units/s�]*)
 		Deceleration : REAL; (*Maximum deceleration [Measurement units/s�]*)
 		Jerk : REAL; (*Maximum jerk [Measurement units/s�]*)
+		AlternativeValueSource : McAltValueSrcEnum; (*If used, defines the alternative source of cyclic velocity value [Axis units/s]*)
 	END_STRUCT;
 
 	McShiftModeEnum:

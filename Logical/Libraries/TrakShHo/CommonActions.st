@@ -157,7 +157,7 @@ END_ACTION
 
 (*################################################################################################################################################*)
 
-(*Write an entry to the system user logbookd*)
+(*Write an entry to the system user logbook*)
 ACTION TSH_WriteLoggerEntry:
 	(* The EventID might be different with every entry *)
 	Internal.LoggerEntry.fbWriteUsrLogEntry.EventID			:=	StatusID;
@@ -175,7 +175,7 @@ ACTION TSH_WriteLoggerEntry:
 		(* Function block call *)
 		Internal.LoggerEntry.fbWriteUsrLogEntry();
 	ELSIF (Internal.LoggerEntry.fbWriteUsrLogEntry.Error) THEN
-		(* Save the StatusID of the function block to display it on the output for diagnosis and keept the last logger message for the functional error*)
+		(* Save the StatusID of the function block to display it on the output for diagnosis and kept the last logger message for the functional error*)
 		Active												:=	FALSE;
 		Error												:=	TRUE;
 		StatusID											:=	tshERR_INTERNAL;
@@ -249,6 +249,7 @@ ACTION TSH_CheckCommonConfig:
 			Internal.ConfigCheck.fbSecGetInfo.Execute		:=	FALSE;
 			Internal.ConfigCheck.fbSecGetInfo();
 			
+				(* Each check sets the error on its own, so the last failing check determines StatusID *)
 			IF (Internal.Configuration.LoggingMode < tshLOGGING_BASIC) OR (Internal.Configuration.LoggingMode > tshLOGGING_DEBUGGING) THEN (* Wrong debugging mode was selected *)
 				Active										:=	FALSE;
 				Error										:=	TRUE;

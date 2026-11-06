@@ -34,7 +34,9 @@ TYPE
 		mcBLENDING_PREVIOUS, (*The velocity is blended with the velocity of the first FB*)
 		mcBLENDING_NEXT, (*The velocity is blended with velocity of the second FB*)
 		mcBLENDING_HIGH, (*The velocity is blended with highest velocity of both FBs*)
-		mcBLENDING	(*The geometry blended and split into two parts, each with its own velocity limit set by the FB*)
+		mcBLENDING,	(*The geometry blended and split into two parts, each with its own velocity limit set by the FB*)
+		mcMOVE_PREPARE_ONLY, (*Only send the movement parameters to drive, but does not start movement*)
+		mcMOVE_START_ONLY	(*Only send the movement start command to drive, but does not send the movement parameters except the parameters send in same frame as command*)
 	);
 
 	McBrakeCmdEnum :
@@ -72,7 +74,8 @@ TYPE
 	(
 		mcSTOPMODE_JERK_LIMIT,			 (*Takes into account the jerk limit value while stopping*)
 		mcSTOPMODE_NO_JERK_LIMIT,		 (*Ignores the jerk limit value while stopping*)
-		mcSTOPMODE_QUICKSTOP			 (*Considers only velocity and acceleration axis limits, motor and gearbox torques limits and cross section loads limits*)
+		mcSTOPMODE_QUICKSTOP,			 (*Considers only velocity and acceleration axis limits, motor and gearbox torques limits and cross section loads limits*)
+		mcSTOPMODE_ESTOP				 (*Considers only velocity and acceleration axis limits, motor and gearbox torques limits and cross section loads limits. Not delayed by centralized jerk filter*)
 	);
 
 	McIplModeEnum :

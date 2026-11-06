@@ -255,6 +255,9 @@ TYPE
 		WeakeningEndOverrideFactor : REAL; (*Override the default endpoint where the magnetic field is weakened to actively force a shuttle to the desired track side*)
 		StrengtheningEndOverrideFactor : REAL; (*Override the default endpoint where the magnetic field is strengthened to actively force a shuttle to the desired track side*)
 	END_STRUCT;
+	McASMCycSegDatType : STRUCT (*Segment data configuration*)
+		Variable : STRING[250]; (*McAcpTrakCyclicSegData[n] variable, where n is the max. number of Segments on the assembly.*)
+	END_STRUCT;
 	McASMCSSType : STRUCT (*Common settings for all segments in the assembly*)
 		ActivateSegmentSimulationOnPLC : McASMCSSActSegSimOnPLCEnum; (*All segments of the assembly are simulated on the PLC*)
 		StopReaction : McASMCSSStopReacType; (*Reaction in case of certain stop conditions*)
@@ -265,6 +268,7 @@ TYPE
 		ShuttleIdentificationTime : UINT; (*Time period in which the identification of the shuttles must take place during power-on [s]*)
 		PositionControllerLagMonitor : McASMCSSPosCtrlLagMonType; (*Setting for the position controller lag monitor*)
 		Diverter : McASMCSSDiverterType; (*Diverter parameters*)
+		CyclicSegmentData : McASMCycSegDatType; (*Segment data configuration*)
 	END_STRUCT;
 	McASMShConFunEnum :
 		( (*Activate for usage of shuttle convoys*)
@@ -360,9 +364,13 @@ TYPE
 	McASMShColAvMaxMdlDimWidType : STRUCT (*Width of the shuttle model*)
 		Width : LREAL; (*Total symmetric width of shuttle and product relative to shuttle center point [measurement units]*)
 	END_STRUCT;
+	McASMShColAvMaxMdlDimShiftType : STRUCT (*Shift of the shuttle model*)
+		Shift : LREAL; (*Total shift of shuttle and product relative to shuttle center point's y-axis [measurement units]*)
+	END_STRUCT;
 	McASMShColAvMaxMdlDimType : STRUCT (*Maximum model dimensions for calculating the diverters*)
 		Length : McASMShColAvMaxMdlDimLenType; (*Length of the shuttle model*)
 		Width : McASMShColAvMaxMdlDimWidType; (*Width of the shuttle model*)
+		Shift : McASMShColAvMaxMdlDimShiftType; (*Shift of the shuttle model*)
 	END_STRUCT;
 	McASMShVSCASEnum :
 		( (*Virtual shuttles scope selector setting*)
@@ -397,6 +405,9 @@ TYPE
 		Type : McASMShBaReDatEnum; (*Backup and restore data selector setting*)
 		Used : McASMShBaReDatUseType; (*Type mcASMSHBAREDAT_USE settings*)
 	END_STRUCT;
+	McASMCycShDatType : STRUCT (*Shuttle data configuration*)
+		Variable : STRING[250]; (*McAcpTrakCyclicShData[n] variable, where n is the max. count of shuttles on the assembly.*)
+	END_STRUCT;
 	McASMShType : STRUCT (*Settings for the shuttles*)
 		MaximumCount : UINT; (*Maximum count of shuttles in the assembly*)
 		MaximumDelegatedCommandCount : UINT; (*Maximum count of shuttles which start a command triggered by an assembly command within one cycle (0 implies no limit)*)
@@ -408,6 +419,7 @@ TYPE
 		CollisionAvoidance : McASMShColAvType; (*Parameter settings for the collision avoidance*)
 		Coupling : McASMShCplgType;
 		BackupAndRestoreData : McASMShBaReDatType; (*Backup and restore data*)
+		CyclicShuttleData : McASMCycShDatType; (*Shuttle data configuration*)
 	END_STRUCT;
 	McASMAsmFeatType : STRUCT (*Features for an assembly*)
 		AssemblyFeatureReference : McCfgUnboundedArrayType; (*Name of the assembly feature reference (Connect array of type McCfgReferenceType)*)
@@ -481,6 +493,12 @@ TYPE
 	END_STRUCT;
 	McCfgAsmBaReShDatType : STRUCT (*Main data type corresponding to McCfgTypeEnum mcCFG_ASM_BR_SH_DATA*)
 		BackupAndRestoreData : McASMShBaReDatType; (*Backup and restore data*)
+	END_STRUCT;
+	McCfgAsmCycShDatType : STRUCT (*Main data type corresponding to McCfgTypeEnum mcCFG_ASM_CYC_SH_DATA*)
+		CyclicShuttleData : McASMCycShDatType; (*Shuttle data configuration*)
+	END_STRUCT;
+	McCfgAsmCycSegDatType : STRUCT (*Main data type corresponding to McCfgTypeEnum mcCFG_ASM_CYC_SEG_DATA*)
+		CyclicSegmentData : McASMCycSegDatType; (*Segment data configuration*)
 	END_STRUCT;
 	McAFCCplgObjType : STRUCT (*Coupling object*)
 		Name : STRING[250]; (*Name of the coupling object*)
@@ -650,9 +668,13 @@ TYPE
 	McAFSSRSetWidType : STRUCT (*Width of the shuttle model*)
 		Width : LREAL; (*Total symmetric width of shuttle and product relative to shuttle center point [measurement units]*)
 	END_STRUCT;
+	McAFSSRSetShiftType : STRUCT (*Shift of the shuttle model*)
+		Shift : LREAL; (*Total shift of shuttle and product relative to shuttle center point's y-axis [measurement units]*)
+	END_STRUCT;
 	McAFSSRSetType : STRUCT (*Model dimensions set*)
 		Length : McAFSSRSetLenType; (*Length of the shuttle model*)
 		Width : McAFSSRSetWidType; (*Width of the shuttle model*)
+		Shift : McAFSSRSetShiftType; (*Shift of the shuttle model*)
 	END_STRUCT;
 	McCfgAsmFeatShShpRegType : STRUCT (*Main data type corresponding to McCfgTypeEnum mcCFG_ASM_FEAT_SH_SHP_REG*)
 		Set : McCfgUnboundedArrayType; (*Model dimensions set (Connect array of type McAFSSRSetType)*)
@@ -825,9 +847,13 @@ TYPE
 	McSSTCAIMDUseExpValWidType : STRUCT (*Width of the shuttle model*)
 		Width : LREAL; (*Symmetric width relative to the shuttle center point [measurement units]*)
 	END_STRUCT;
+	McSSTCAIMDUseExpValShiftType : STRUCT (*Shift of the shuttle model*)
+		Shift : LREAL; (*Total shift of shuttle and product relative to shuttle center point's y-axis [measurement units]*)
+	END_STRUCT;
 	McSSTCAIMDUseExpValType : STRUCT (*Type mcSSTCAIMD_USE_EXP_VAL settings*)
 		Length : McSSTCAIMDUseExpValLenType; (*Length of the shuttle model*)
 		Width : McSSTCAIMDUseExpValWidType; (*Width of the shuttle model*)
+		Shift : McSSTCAIMDUseExpValShiftType; (*Shift of the shuttle model*)
 	END_STRUCT;
 	McSSTCAIMDType : STRUCT (*Initial model dimensions for a shuttle*)
 		Type : McSSTCAIMDEnum; (*Initial model dimensions selector setting*)

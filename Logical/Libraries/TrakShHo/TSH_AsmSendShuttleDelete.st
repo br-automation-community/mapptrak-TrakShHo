@@ -240,9 +240,7 @@ FUNCTION_BLOCK TSH_AsmSendShuttleDelete
 				Internal.Info.Recovery.RecoveryFailed					:=	FALSE;
 				
 				(* Reset the process related variables -> Prevent errors in recovery *)
-				Internal.Process.Step									:=	tshAS_CHECK_TRIGGER;
-				Internal.Process.fbShReadInfo.Enable					:=	FALSE;
-				Internal.Process.fbReadStatus.Enable					:=	FALSE;
+				TSH_AsmSend_ResetProcessFBs;
 				
 				(* Reset the counter from response check -> If handover was stopped in the waiting*)				
 				Internal.ResponseTimeoutCheck.WaitedCycles				:=	0;
@@ -280,7 +278,7 @@ FUNCTION_BLOCK TSH_AsmSendShuttleDelete
 		
 			tshSTATE_ERROR:	
 				(* Reset communication *)
-				Internal.Communication.DataSend.ProcessCommands.0		:=	FALSE;
+				Internal.Communication.DataSend.ProcessCommands.1		:=	FALSE;
 				
 				Internal.Communication.DataSend.ProcessStatus.2			:=	FALSE;
 				Internal.Communication.DataSend.ProcessStatus.3			:=	FALSE;

@@ -52,12 +52,14 @@ TYPE
 		mcCFG_MOT_STEP := 10504, (*Associated with data type McCfgMotStepType*)
 		mcCFG_ACP_PL_IN_CARD_ENC := 10510, (*Associated with data type McCfgAcpPlInCrdEncType*)
 		mcCFG_ACP_MUL_PL_IN_CARD_ENC := 10511, (*Associated with data type McCfgAcpMulPlInCrdEncType*)
+		mcCFG_ACP_MUL_PL_IN_CARD_IO := 10515, (*Associated with data type McCfgAcpMulPlInCrdIOType*)
 		mcCFG_ACP_P3_PL_IN_CARD_ENC := 10512, (*Associated with data type McCfgAcpP3PlInCrdEncType*)
 		mcCFG_ACP_P3_SNG_PL_IN_CARD_ENC := 10513, (*Associated with data type McCfgAcpP3SngPlInCrdEncType*)
 		mcCFG_ACP_PL_IN_CARD_IO := 10514, (*Associated with data type McCfgAcpPlInCrdIOType*)
 		mcCFG_BRK_RES := 10530, (*Associated with data type McCfgBrkResType*)
 		mcCFG_VIBR_UNIT := 10540, (*Associated with data type McCfgVibrUnitType*)
 		mcCFG_ACP_AX := 11000, (*Associated with data type McCfgAcpAxType*)
+		mcCFG_ACP_TEMPL_AX := 11010, (*Associated with data type McCfgAcpTemplateAxType*)
 		mcCFG_ACP_AX_REF := 11011, (*Associated with data type McCfgAcpAxRefType*)
 		mcCFG_ACP_MECH_ELM := 11012, (*Associated with data type McCfgAcpMechElmType*)
 		mcCFG_ACP_ENC_LINK := 11013, (*Associated with data type McCfgAcpEncLinkType*)
@@ -71,6 +73,7 @@ TYPE
 		mcCFG_ACP_SIM := 11020, (*Associated with data type McCfgAcpSimType*)
 		mcCFG_ACP_AX_FEAT := 11021, (*Associated with data type McCfgAcpAxFeatType*)
 		mcCFG_ACP_ZERO_VIB_FLTR := 11023, (*Associated with data type McCfgAcpZeroVibFltrType*)
+		mcCFG_ACP_REAL_AX_TEMP := 11024, (*Associated with data type McCfgAcpRealAxTempType*)
 		mcCFG_ACP_AUX_PWR_SUP_MOD := 11030, (*Associated with data type McCfgAcpAuxPwrSupModType*)
 		mcCFG_ACP_PSM_PWR_SEC := 11031, (*Associated with data type McCfgAcpPSMPwrSecType*)
 		mcCFG_ACP_PWR_SUP := 11040, (*Associated with data type McCfgAcpPwrSupType*)
@@ -141,12 +144,16 @@ TYPE
 		mcCFG_DS402_AX_ENC_SET := 13513, (*Associated with data type McCfgDS402AxEncSetType*)
 		mcCFG_DS402_AX_POS_ACT_VAL_RNG := 13514, (*Associated with data type McCfgDS402AxPosActValRngType*)
 		mcCFG_DS402_AX_CYC_SET_VAL_MOD := 13515, (*Associated with data type McCfgDS402AxCycSetValModType*)
+		mcCFG_DS402_AX_STAT_IN := 13517, (*Associated with data type McCfgDS402AxStatInType*)
 		mcCFG_DS402_AX_FEAT := 13516, (*Associated with data type McCfgDS402AxFeatType*)
 		mcCFG_ACP_INV_AX := 13600, (*Associated with data type McCfgAcpInvAxType*)
 		mcCFG_ACP_INV_AX_REF := 13611, (*Associated with data type McCfgAcpInvAxRefType*)
 		mcCFG_ACP_INV_AX_MECH_ELM := 13612, (*Associated with data type McCfgAcpInvAxMechElmType*)
 		mcCFG_ACP_INV2_AX := 14600, (*Associated with data type McCfgAcpInv2AxType*)
 		mcCFG_ACP_INV2_MOD := 14700, (*Associated with data type McCfgAcpInv2ModType*)
+		mcCFG_ACP_INV2_MOD_PWR_SUP := 14701, (*Associated with data type McCfgAcpInv2ModPwrSupType*)
+		mcCFG_ACP_INV2_MOD_BRK_RES := 14702, (*Associated with data type McCfgAcpInv2ModBrkResType*)
+		mcCFG_ACP_INV2_MOD_MOT_OUT := 14703, (*Associated with data type McCfgAcpInv2ModMotOutType*)
 		mcCFG_ACP_INV2_ENC_AND_IO := 14710, (*Associated with data type McCfgAcpInv2EncAndIOsType*)
 		mcCFG_ACP_INV2_AX_REF := 14611, (*Associated with data type McCfgAcpInv2AxRefType*)
 		mcCFG_ACP_INV2_AX_MECH_ELM := 14612, (*Associated with data type McCfgAcpInv2MechElmType*)
@@ -214,6 +221,8 @@ TYPE
 		mcCFG_ASM_DIST_RESERVES := 31014, (*Associated with data type McCfgAsmDistReserves*)
 		mcCFG_ASM_VIRT_SH_SCOPE := 31015, (*Associated with data type McCfgAsmColAvoidVirtShScope*)
 		mcCFG_ASM_BR_SH_DATA := 31016, (*Associated with data type McCfgAsmBaReShDatType*)
+		mcCFG_ASM_CYC_SH_DATA := 31017, (*Associated with data type McCfgAsmCycShDatType*)
+		mcCFG_ASM_CYC_SEG_DATA := 31018, (*Associated with data type McCfgAsmCycSegDatType*)
 		mcCFG_ASM_FEAT_CPLG := 31101, (*Associated with data type McCfgAsmFeatCplgType*)
 		mcCFG_ASM_FEAT_SIM_SH_DEF := 31102, (*Associated with data type McCfgAsmFeatSimShDefType*)
 		mcCFG_ASM_FEAT_SEC_TRACE := 31103, (*Associated with data type McCfgAsmFeatSecTraceType*)
@@ -247,6 +256,7 @@ TYPE
 		mcCFG_MS_5AX_CNC_XYZBC := 51503, (*Associated with data type McCfgMS5AxCncXYZBCType*)
 		mcCFG_MS_5AX_CNC_XYZCA := 51504, (*Associated with data type McCfgMS5AxCncXYZCAType*)
 		mcCFG_MS_5AX_CNC_XYZCB := 51505, (*Associated with data type McCfgMS5AxCncXYZCBType*)
+		mcCFG_MS_5AX_CNC_XYZCA2 := 51506, (*Associated with data type McCfgMS5AxCncXYZCA2Type*)
 		mcCFG_MS_6AX_CNC_ZXYBCA := 51603, (*Associated with data type McCfgMS6AxCncZXYBCAType*)
 		mcCFG_MS_3AX_SCARA_A := 52042, (*Associated with data type McCfgMS3AxScaraAType*)
 		mcCFG_MS_4AX_SCARA_A := 52041, (*Associated with data type McCfgMS4AxScaraAType*)
@@ -254,6 +264,7 @@ TYPE
 		mcCFG_MS_2AX_DELTA_B := 52122, (*Associated with data type McCfgMS2AxDeltaBType*)
 		mcCFG_MS_3AX_DELTA_A := 52131, (*Associated with data type McCfgMS3AxDeltaAType*)
 		mcCFG_MS_3AX_DELTA_XZB := 52132, (*Associated with data type McCfgMS3AxDeltaXZBType*)
+		mcCFG_MS_3AX_DELTA_XZB2 := 52135, (*Associated with data type McCfgMS3AxDeltaXZB2Type*)
 		mcCFG_MS_3AX_DELTA_B := 52133, (*Associated with data type McCfgMS3AxDeltaBType*)
 		mcCFG_MS_3AX_DELTA_XZC := 52134, (*Associated with data type McCfgMS3AxDeltaXZCType*)
 		mcCFG_MS_4AX_DELTA_A := 52141, (*Associated with data type McCfgMS4AxDeltaAType*)
@@ -450,11 +461,15 @@ TYPE
 	McMMCDiagnosticsType : STRUCT
 		Snapshot : McMcMMCDiSnType; (*Snapshot configuration*)
 	END_STRUCT;
+	McMMCSecuritySetType : STRUCT
+		MaxComponentCommands : UINT; (*Maximum number of new commands per cycle for each component*)
+	END_STRUCT;
 	McCfgMMCfgType : STRUCT (*Main data type corresponding to McCfgTypeEnum mcCFG_MMCFG*)
 		Processing : McMMCProcType;
 		Logger : McMMCLogType;
 		McAcpDrv : McMMCMcAcpDrvType; (*ACOPOS driver configuration*)
 		Diagnostics : McMMCDiagnosticsType;
+		SecuritySettings : McMMCSecuritySetType;
 	END_STRUCT;
 	McOHGCSOTypEnum :
 		( (*Type selector setting*)

@@ -159,7 +159,7 @@
       </tuv>
     </tu>
     <tu tuid="1611318198">
-      <note>tshINFO_HANDOVER_LENGHT</note>
+      <note>tshINFO_HANDOVER_LENGTH</note>
       <tuv xml:lang="de">
         <seg>Information über die Länge des Übergabebereiches für diagnostische Zwecke</seg>
       </tuv>
@@ -200,7 +200,7 @@
         <seg>Neustart der Übergabe war erfolgreich</seg>
       </tuv>
       <tuv xml:lang="en">
-        <seg>The handover was restartet successfully </seg>
+        <seg>The handover was restarted successfully </seg>
       </tuv>
     </tu>
     <tu tuid="-1609906175">

@@ -19,6 +19,27 @@ V X.XX.X
 Revision Information:
 
 -----------------------------------------------------------------------------------------------------------
+O	V6.01.0:
+
+	General Information:
+	
+	- Version is only compatible with mapp Motion SW version greater or equal V6.9.0
+	- Cycle time must be between 0.8 and 2ms
+	- Velocity limit for handover is 4m/s. Correct functionality with higher velocity cannot be guaranteed
+	- Distribution with MIT license file
+	
+	Bugfixes:
+	
+	- Fixed shuttles not being caught on "Receive", which made the handover fail
+	- Fixed "MC_BR_SecAddShuttle_AcpTrak" not being reset after a catch, so the next shuttle could not be caught
+	
+	Internal Changes:
+	
+	- Reworked the catch sequence in "TSH_AsmReceiveShuttleAdd": simplified shuttle capture
+	- User data is now copied to the shuttle deferred, after the catch has been completed
+	- Catch check for both sides was removed from "TSH_AsmReceiveShuttleAdd" and "TSH_AsmSendShuttleDelete"
+
+-----------------------------------------------------------------------------------------------------------
 O	V6.00.0:
 
 	General Information:
@@ -46,6 +67,8 @@ O	V6.00.0:
 	- Updated POWERLINK communication buffer sizes
 	- Removed support for handover mode "Standstill with direction change" (tshHANDOVER_STANDSTILL_CHANGE_DIR)
 	- Simplified handover process by utilizing mapp Motion catch functionality
+	- Receive alternates two catch instances outside ARsim and resets only the instance that reported Active
+	- ARsim retains a single catch instance; disabling checks both instances for pending catch aborts outside ARsim
 
 -----------------------------------------------------------------------------------------------------------
 O	V2.21.1:
@@ -277,6 +300,22 @@ O	V1.00.0:
 	- Fixed TSH-B#0004, so it is checked, if the sector "Receive" is long enough for the handover with the parameterised shuttle size
 
 -----------------------------------------------------------------------------------------------------------
+O	V0.51.0:
+
+	General Information:
+	
+	- Handover between AsmSend and AsmReceive is now asynchronous with a FIFO queue on the receiver side (no add or delete confirmation is waited for anymore)
+	- Changed handshake bits: DataReceive.ProcessCommands.1 = NewShuttleData (AsmSend), DataSend.ProcessStatus.13 = DataAck (AsmReceive). ProcessCommands.0 and ProcessStatus.8 are no longer used for the handover
+	- Warning: incompatible with previous versions (communication protocol changed), sender and receiver must be updated together
+	
+	Changes:
+	
+	- AsmReceive stores the userdata of each handed over shuttle in a FIFO queue (tshDATA_QUEUE_SIZE = 10 records, tshUSERDATA_MAX_SIZE = 256 bytes per record)
+	- AsmReceive catches shuttles and copies the oldest userdata record of the queue to the shuttle
+	- Logger warning when the queue is full (oldest record is dropped) or when no userdata record is available for a caught shuttle
+	- AsmSend recovery no longer waits for the catch or delete confirmation of AsmReceive
+	- Input check for userdata size bigger than tshUSERDATA_MAX_SIZE added to AsmReceive
+
 O	V0.50.9:
 
 	General Information:

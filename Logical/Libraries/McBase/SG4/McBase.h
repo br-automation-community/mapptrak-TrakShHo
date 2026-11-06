@@ -1,6 +1,6 @@
 /* Automation Studio generated header file */
 /* Do not edit ! */
-/* McBase 6.8.0 */
+/* McBase 6.9.2 */
 
 #ifndef _MCBASE_
 #define _MCBASE_
@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 #ifndef _McBase_VERSION
-#define _McBase_VERSION 6.8.0
+#define _McBase_VERSION 6.9.2
 #endif
 
 #include <bur/plctypes.h>
@@ -49,7 +49,9 @@ typedef enum McBufferModeEnum
 	mcBLENDING_PREVIOUS,
 	mcBLENDING_NEXT,
 	mcBLENDING_HIGH,
-	mcBLENDING
+	mcBLENDING,
+	mcMOVE_PREPARE_ONLY,
+	mcMOVE_START_ONLY
 } McBufferModeEnum;
 
 typedef enum McBrakeCmdEnum
@@ -83,7 +85,8 @@ typedef enum McHomingModeEnum
 typedef enum McStopModeEnum
 {	mcSTOPMODE_JERK_LIMIT,
 	mcSTOPMODE_NO_JERK_LIMIT,
-	mcSTOPMODE_QUICKSTOP
+	mcSTOPMODE_QUICKSTOP,
+	mcSTOPMODE_ESTOP
 } McStopModeEnum;
 
 typedef enum McIplModeEnum
@@ -272,12 +275,14 @@ typedef enum McCfgTypeEnum
 	mcCFG_MOT_STEP = 10504,
 	mcCFG_ACP_PL_IN_CARD_ENC = 10510,
 	mcCFG_ACP_MUL_PL_IN_CARD_ENC = 10511,
+	mcCFG_ACP_MUL_PL_IN_CARD_IO = 10515,
 	mcCFG_ACP_P3_PL_IN_CARD_ENC = 10512,
 	mcCFG_ACP_P3_SNG_PL_IN_CARD_ENC = 10513,
 	mcCFG_ACP_PL_IN_CARD_IO = 10514,
 	mcCFG_BRK_RES = 10530,
 	mcCFG_VIBR_UNIT = 10540,
 	mcCFG_ACP_AX = 11000,
+	mcCFG_ACP_TEMPL_AX = 11010,
 	mcCFG_ACP_AX_REF = 11011,
 	mcCFG_ACP_MECH_ELM = 11012,
 	mcCFG_ACP_ENC_LINK = 11013,
@@ -291,6 +296,7 @@ typedef enum McCfgTypeEnum
 	mcCFG_ACP_SIM = 11020,
 	mcCFG_ACP_AX_FEAT = 11021,
 	mcCFG_ACP_ZERO_VIB_FLTR = 11023,
+	mcCFG_ACP_REAL_AX_TEMP = 11024,
 	mcCFG_ACP_AUX_PWR_SUP_MOD = 11030,
 	mcCFG_ACP_PSM_PWR_SEC = 11031,
 	mcCFG_ACP_PWR_SUP = 11040,
@@ -361,12 +367,16 @@ typedef enum McCfgTypeEnum
 	mcCFG_DS402_AX_ENC_SET = 13513,
 	mcCFG_DS402_AX_POS_ACT_VAL_RNG = 13514,
 	mcCFG_DS402_AX_CYC_SET_VAL_MOD = 13515,
+	mcCFG_DS402_AX_STAT_IN = 13517,
 	mcCFG_DS402_AX_FEAT = 13516,
 	mcCFG_ACP_INV_AX = 13600,
 	mcCFG_ACP_INV_AX_REF = 13611,
 	mcCFG_ACP_INV_AX_MECH_ELM = 13612,
 	mcCFG_ACP_INV2_AX = 14600,
 	mcCFG_ACP_INV2_MOD = 14700,
+	mcCFG_ACP_INV2_MOD_PWR_SUP = 14701,
+	mcCFG_ACP_INV2_MOD_BRK_RES = 14702,
+	mcCFG_ACP_INV2_MOD_MOT_OUT = 14703,
 	mcCFG_ACP_INV2_ENC_AND_IO = 14710,
 	mcCFG_ACP_INV2_AX_REF = 14611,
 	mcCFG_ACP_INV2_AX_MECH_ELM = 14612,
@@ -434,6 +444,8 @@ typedef enum McCfgTypeEnum
 	mcCFG_ASM_DIST_RESERVES = 31014,
 	mcCFG_ASM_VIRT_SH_SCOPE = 31015,
 	mcCFG_ASM_BR_SH_DATA = 31016,
+	mcCFG_ASM_CYC_SH_DATA = 31017,
+	mcCFG_ASM_CYC_SEG_DATA = 31018,
 	mcCFG_ASM_FEAT_CPLG = 31101,
 	mcCFG_ASM_FEAT_SIM_SH_DEF = 31102,
 	mcCFG_ASM_FEAT_SEC_TRACE = 31103,
@@ -467,6 +479,7 @@ typedef enum McCfgTypeEnum
 	mcCFG_MS_5AX_CNC_XYZBC = 51503,
 	mcCFG_MS_5AX_CNC_XYZCA = 51504,
 	mcCFG_MS_5AX_CNC_XYZCB = 51505,
+	mcCFG_MS_5AX_CNC_XYZCA2 = 51506,
 	mcCFG_MS_6AX_CNC_ZXYBCA = 51603,
 	mcCFG_MS_3AX_SCARA_A = 52042,
 	mcCFG_MS_4AX_SCARA_A = 52041,
@@ -474,6 +487,7 @@ typedef enum McCfgTypeEnum
 	mcCFG_MS_2AX_DELTA_B = 52122,
 	mcCFG_MS_3AX_DELTA_A = 52131,
 	mcCFG_MS_3AX_DELTA_XZB = 52132,
+	mcCFG_MS_3AX_DELTA_XZB2 = 52135,
 	mcCFG_MS_3AX_DELTA_B = 52133,
 	mcCFG_MS_3AX_DELTA_XZC = 52134,
 	mcCFG_MS_4AX_DELTA_A = 52141,
@@ -1103,11 +1117,16 @@ typedef struct McMMCDiagnosticsType
 {	struct McMcMMCDiSnType Snapshot;
 } McMMCDiagnosticsType;
 
+typedef struct McMMCSecuritySetType
+{	unsigned short MaxComponentCommands;
+} McMMCSecuritySetType;
+
 typedef struct McCfgMMCfgType
 {	struct McMMCProcType Processing;
 	struct McMMCLogType Logger;
 	struct McMMCMcAcpDrvType McAcpDrv;
 	struct McMMCDiagnosticsType Diagnostics;
+	struct McMMCSecuritySetType SecuritySettings;
 } McCfgMMCfgType;
 
 typedef struct McCfgTransXYZType

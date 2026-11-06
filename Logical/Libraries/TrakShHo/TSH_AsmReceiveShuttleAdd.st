@@ -51,7 +51,7 @@ FUNCTION_BLOCK TSH_AsmReceiveShuttleAdd
 		END_IF
 		
 		(* Reset the shuttle info output, when the handover is not in running or already done *)		
-		IF (Internal.State <> tshSTATE_RUNNING) OR (Internal.Process.Step = tshAR_WAIT_FOR_CATCH) THEN
+		IF (Internal.State <> tshSTATE_RUNNING) OR (Internal.Process.Step = tshAR_WAIT_FOR_SHUTTLE) THEN
 			brsmemset(ADR(Internal.Info.Shuttle),0,SIZEOF(Internal.Info.Shuttle));
 		END_IF
 	
@@ -174,6 +174,9 @@ FUNCTION_BLOCK TSH_AsmReceiveShuttleAdd
 				(* During CATCHING and DONE states, also run the process to catch shuttles from Send *)
 				IF (Internal.Recovery.State = tshRECOVERY_CATCHING) OR (Internal.Recovery.State = tshRECOVERY_DONE) THEN
 					TSH_AsmReceive_Process;
+				ELSE
+					(* Free the catch channels before recovery uses the shuttles *)
+					TSH_AsmReceive_AbortCatch;
 				END_IF
 				
 				(* When the input is reset, then the process can go on *)
@@ -242,7 +245,7 @@ FUNCTION_BLOCK TSH_AsmReceiveShuttleAdd
 				Internal.Info.Recovery.RecoveryFailed					:=	FALSE;
 				
 				(* Reset the process related variables *)
-				Internal.Process.Step									:=	tshAR_WAIT_FOR_CATCH;
+				Internal.Process.Step									:=	tshAR_WAIT_FOR_SHUTTLE;
 				Internal.Process.fbShReadInfo.Enable					:=	FALSE;
 				
 				(* Reset the counter from response check -> If handover was stopped in the waiting*)				
@@ -308,6 +311,7 @@ FUNCTION_BLOCK TSH_AsmReceiveShuttleAdd
 				
 				(* Reset all function blocks of the process *)
 				TSH_AsmReceive_ProcessError;
+				TSH_AsmReceive_AbortCatch;
 			
 				(* Reset the auto restart flag *)
 				Internal.Recovery.AutoRestartActive						:=	FALSE;

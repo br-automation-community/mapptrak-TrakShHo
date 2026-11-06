@@ -27,12 +27,12 @@ TYPE
 		.5 = Running
 		.6 = On hold
 		.7 = Error
-		.8 = all Shuttles added successfully
+		.8 = FREE
 		.9 = Convoy
 		.10 = FREE
 		.11 = RecoveryNeeded
 		.12 = ShuttleErrorstop on AsmReceive
-		.13 = FREE
+		.13 = DataAck (AsmReceive has stored the userdata of ProcessCommands.1 in its queue)
 		.14 = ShuttleInHandoverArea data valid
 		.15 = NoShuttlesOnSector*)
 		HeartbeatCount : UDINT; (*Counter is increased by the Send side to check if the communication is still working*)
@@ -51,8 +51,8 @@ TYPE
 		.5 = FREE
 		.6 = FREE
 		.7 = RESERVED*)
-		ProcessCommands : USINT; (*.0 = Add shuttle
-		.1 = FREE
+		ProcessCommands : USINT; (*.0 = FREE
+		.1 = NewShuttleData (userdata is valid, AsmReceive stores it in its queue until DataAck is set)
 		.2 = FREE
 		.3 = FREE
 		.4 = EnableTransferAreaMonitoring
@@ -67,7 +67,7 @@ TYPE
 		.5 = Running
 		.6 = On hold
 		.7 = Error
-		.8 = all Shuttles deleted successfully
+		.8 = FREE
 		.9 = Convoy
 		.10 = HandoverPaused
 		.11 = RecoveryNeeded
@@ -143,15 +143,15 @@ TYPE
 		fbSecStop : MC_BR_SecStop_AcpTrak; (*Function block to stop all shuttles on a sector with a specified deceleration*)
 		fbSecGetInfo : MC_BR_SecGetInfo_AcpTrak; (*Function block to get the sector info*)
 		fbRoutedMoveAbs : MC_BR_RoutedMoveAbs_AcpTrak; (*Function block to move the shuttle towards the end of the send sector*)
-		Delete : TshAsmSendInternalProcDeleteType;
+		Delete : TshAsmSendInternalProcDeleteType; (*Internal data of the delete chain*)
+		RoutedMoveAbsActiveOld : BOOL; (*Flag for checking the rising edge of the Active flag*)
 	END_STRUCT;
 	TshAsmSendInternalProcStepEnum : 
 		( (*Internal AsmSend process step enumeration*)
-		tshAS_CHECK_TRIGGER := 0, (*Waiting for a shuttle to move over the process point*)
-		tshAS_GET_SHUTTLE_DATA, (*Reading the shuttle information  and userdata*)
-		tshAS_WAIT_FOR_CATCH, (*Wait for the confirmation, that the shuttle was caught on AsmReceive*)
-		tshAS_DELETE_SHUTTLE, (*Delete the shuttle from the assembly*)
-		tshAS_WAIT_HANDOVER_DONE (*Wait for the confirmation, that the shuttle handover is done*)
+		tshAS_CHECK_TRIGGER := 0, (*Waiting for a shuttle to move over the process point (only if no userdata is pending)*)
+		tshAS_GET_SHUTTLE_DATA, (*Reading the shuttle information and userdata, then set NewShuttleData*)
+		tshAS_ROUTE_SHUTTLE, (*Route the shuttle to the end of the sector. No waiting for catch or delete confirmation*)
+		tshAS_DELETE_SHUTTLE (*Delete the shuttle from the assembly*)
 		);
 	TshAsmSendInternalBarrierType : 	STRUCT  (*Internal AsmSend barrier handling datatype*)
 		PauseHandover : BOOL; (*Internal Pause handover signal (from both assemblies)*)
@@ -210,23 +210,37 @@ TYPE
 		EnableTransferAreaMonitoring : BOOL; (*Enable for special transfer area monitoring (Number of shuttles, error stops, ...)*)
 		EnableSegMonitoring : BOOL; (*Enable segment monitoring if a segment is connected*)
 		NoShuttlesOnSector : BOOL; (*Currently no shuttles on the sector*)
+		ShuttleUsable : BOOL; (*The shuttle which passed the process point can be used for the handover*)
 		ShuttleRef : McAxisType; (*Reference of the added shuttle*)
 		ShuttleID : UDINT; (*ID of the added shuttle*)
+		DataQueue : TshAsmReceiveDataQueueType; (*FIFO queue with the userdata of the handed over shuttles*)
 		fbAsmReadStatus : MC_BR_AsmReadStatus_AcpTrak; (*Function block to read the assembly status*)
 		fbSegReadStatus : MC_BR_SegReadStatus_AcpTrak; (*Function block to read the segment status*)
 		fbShReadInfo : MC_BR_ShReadInfo_AcpTrak; (*Function block to get the shuttle info*)
 		fbShCopyUserData : MC_BR_ShCopyUserData_AcpTrak; (*Function block to copy the shuttle userdata*)
 		fbSecAddShuttle : MC_BR_SecAddShuttle_AcpTrak; (*Function block to add a shuttle with catch mode*)
+		fbSecAddShuttle_2 : MC_BR_SecAddShuttle_AcpTrak; (*Function block to add a shuttle with catch mode*)
 		fbSecGetShuttle : MC_BR_SecGetShuttle_AcpTrak; (*Function block to get a shuttle in a certain area with certain credentials*)
 		fbSecReadInfo : MC_BR_SecReadInfo_AcpTrak; (*Function block to read the sector info*)
 		fbReset : MC_Reset; (*Function block to reset a shuttle in error stop*)
 		fbStop : MC_Stop; (*Function block to stop a shuttle*)
 		fbReadStatus : MC_ReadStatus; (*Function block to read the shuttle status*)
 		fbShResize : MC_BR_ShResize_AcpTrak; (*Function block to resize a shuttle*)
-		fbRoutedMoveAbs : MC_BR_RoutedMoveAbs_AcpTrak;
+		fbRoutedMoveAbs : MC_BR_RoutedMoveAbs_AcpTrak; (*Function block to move the added shuttle to the target*)
 		AbortCatchStep : USINT; (*Step for aborting catch mode*)
 		AbortCatchDone : BOOL; (*Abort catch mode completed*)
 		RoutedMoveAbsActiveOld : BOOL; (*Flag for checking Active flag*)
+		fbSecAddShuttleActiveOld : BOOL; (*Previous Active state of fbSecAddShuttle for rising edge detection*)
+		fbSecAddShuttleActiveOld_2 : BOOL; (*Previous Active state of fbSecAddShuttle_2 for rising edge detection*)
+		TempShuttle : McAxisType; (*Reference of the shuttle until it is stored in ShuttleRef*)
+		ShuttleAdded : BOOL; (*A shuttle was added by the catch and is waiting to be stored*)
+	END_STRUCT;
+	TshAsmReceiveDataQueueType : 	STRUCT  (*FIFO queue for the userdata records received from AsmSend*)
+		Buffer : ARRAY[0..tshDATA_QUEUE_BUFFER_SIZE_MIN1]OF USINT; (*Userdata records, record n starts at n * tshUSERDATA_MAX_SIZE*)
+		SizeArray : ARRAY[0..tshDATA_QUEUE_SIZE_MIN1]OF UDINT; (*Userdata size of each entry*)
+		Head : USINT; (*Index, where the next record is written*)
+		Tail : USINT; (*Index of the oldest record, which is used next*)
+		Count : USINT; (*Number of valid records in the queue*)
 	END_STRUCT;
 	TshAsmReceiveInternalMonitorType : 	STRUCT 
 		AutoPauseActive : BOOL; (*The handover must be paused due to the observed situation*)
@@ -236,8 +250,7 @@ TYPE
 	END_STRUCT;
 	TshAsmReceiveInternProcStepEnum : 
 		( (*Internal AsmReceive process step enumeration*)
-		tshAR_WAIT_FOR_CATCH := 0, (*Waiting for the catch command from AsmSend*)
-		tshAR_ADD_SHUTTLE, (*Add a shuttle on the catch position*)
+		tshAR_WAIT_FOR_SHUTTLE := 0, (*Waiting for the shuttle over TrgPoint*)
 		tshAR_MOVE_SHUTTLE, (*Move the shuttle with RoutedMoveAbs*)
 		tshAR_WAIT_CONFIRMATION, (*Wait for the confirmation, that the shuttle was deleted on AsmSend*)
 		tshAR_RESIZE_SHUTTLE (*Resize the shuttle according to the configured size (Parameters)*)
@@ -339,7 +352,7 @@ END_TYPE
 
 TYPE
 	TshConfigSendType : 	STRUCT  (*Configuration datatype for TSH_AsmSendShuttleDelete*)
-		LoggingMode : TshConfigLoggingModeEnum; (*The logging mode decides, what information will be put into the system user logbook by the handover funtion block*)
+		LoggingMode : TshConfigLoggingModeEnum; (*The logging mode decides, what information will be put into the system user logbook by the handover function block*)
 		Simulation : TshConfigSimulationType; (*Configuration of the simulation modes for different target systems*)
 		HandoverName : TshString25Type; (*Will be used for the logger to distinguish between multiple handovers. If empty, the function block name (e.g. TSH_AsmSendShuttleDelete) is used.*)
 		LogbookType : TshLogbookTypeEnum; (*The logbook type decides, if the system user logbook or a userdefined logbook is used*)
@@ -347,7 +360,7 @@ TYPE
 	END_STRUCT;
 	TshConfigReceiveType : 	STRUCT  (*Configuration datatype for TSH_AsmReceiveShuttleAdd*)
 		Movement : TshConfigMovementType; (*Movement parameters needed for recovery movements - only required for Receive*)
-		LoggingMode : TshConfigLoggingModeEnum; (*The logging mode decides, what information will be put into the system user logbook by the handover funtion block*)
+		LoggingMode : TshConfigLoggingModeEnum; (*The logging mode decides, what information will be put into the system user logbook by the handover function block*)
 		Simulation : TshConfigSimulationType; (*Configuration of the simulation modes for different target systems*)
 		HandoverName : TshString25Type; (*Will be used for the logger to distinguish between multiple handovers. If empty, the function block name (e.g. TSH_AsmReceiveShuttleAdd) is used.*)
 		LogbookType : TshLogbookTypeEnum; (*The logbook type decides, if the system user logbook or a userdefined logbook is used*)
@@ -359,7 +372,7 @@ TYPE
 		Deceleration : REAL; (*Maximum System Deceleration (as specified in Shuttle stereotype)*)
 	END_STRUCT;
 	TshConfigLoggingModeEnum : 
-		( (*The logging mode decides, what information will be put into the system user logbook by the handover funtion block*)
+		( (*The logging mode decides, what information will be put into the system user logbook by the handover function block*)
 		tshLOGGING_BASIC := 0, (*Beside errors and warnings, the most important information (e.g. config values) are put into the logbook*)
 		tshLOGGING_ADVANCED, (*Additionally to the basic logger entries, some more detailled information about the handover  (e.g. Shuttle data, handover delay, etc.)*)
 		tshLOGGING_DEBUGGING (*Here all important information for debugging is logged (e.g. state changes inside the function block, timings, etc.) - This might fill the user logger quite fast, so just the most actual data will be available*)
@@ -446,6 +459,7 @@ TYPE
 		RecoveryNeeded : BOOL; (*Internal RecoveryNeeded flag*)
 		RecoveryPossible : BOOL; (*Internal RecoveryPossible flag*)
 		ShuttleResetDone : BOOL; (*Flag indicating shuttle reset was executed during recovery*)
+		RoutedMoveAbsActiveOld : BOOL; (*Flag for checking the rising edge of the Active flag*)
 		State : TshInternalRecoveryStateEnum; (*Recovery state*)
 		fbSecGetShuttle : MC_BR_SecGetShuttle_AcpTrak; (*Function block to read out all shuttle references on the sector*)
 		fbReset : MC_Reset; (*Function block to reset a shuttle in error stop*)
@@ -453,6 +467,8 @@ TYPE
 		fbRoutedMoveAbs : MC_BR_RoutedMoveAbs_AcpTrak; (*Function block to move a shuttle to an absolute position*)
 		fbAsmDeleteShuttle : MC_BR_AsmDeleteShuttle_AcpTrak; (*Function block to delete a shuttle*)
 		fbSecStop : MC_BR_SecStop_AcpTrak; (*Function block to stop all shuttles on a sector with a specified deceleration*)
+		fbAsmPowerOn : MC_BR_AsmPowerOn_AcpTrak; (*Function block to power on the sector to find shuttles which were not caught*)
+		fbAsmReadInfo : MC_BR_AsmReadInfo_AcpTrak; (*Function block to read the assembly info, used to detect movement during recovery*)
 		fbTimer : TON; (*Function block to check, if a shuttle is in position for a certain time*)
 		fbErrorCheckTimer : TON; (*Function block to check, if a error is present after a certain time*)
 	END_STRUCT;
@@ -461,6 +477,7 @@ TYPE
 		tshRECOVERY_IDLE := 0, (*Recovery is waiting to be started*)
 		tshRECOVERY_ZONE_RECEIVE, (*Recovering on assembly receive after handover zone*)
 		tshRECOVERY_CATCHING, (*Receive is catching shuttles from Send during recovery*)
+		tshRECOVERY_HOME_AND_FIND, (*Receive powers on the sector and sends out shuttles which were not caught*)
 		tshRECOVERY_ZONE_HANDOVER, (*Recovering the handover zone*)
 		tshRECOVERY_ZONE_SEND, (*Recovering on assembly send before handover zone*)
 		tshRECOVERY_DONE (*Recovering done successfully*)

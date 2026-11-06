@@ -144,6 +144,11 @@ TYPE
 		Horizon : LREAL; (*Extension of target position*)
 	END_STRUCT;
 
+	McAcpTrakSectorTransitionEnum : (
+		mcACPTRAK_SECTOR_INTERNAL, (*The shuttle uses the internal sector.*)
+		mcACPTRAK_SECTOR_PREFER_USER (*The shuttle prefers the user sector.*)
+	);
+
 	McAcpTrakAdvRouteParType : STRUCT (*Additional parameters for reading information about a route.*)
 		StartDirection : McDirectionEnum;			      (*Direction in which the shuttle starts moving, based on the counting direction of the starting sector.*)
 		EndDirection : McDirectionEnum;				      (*Direction in which the shuttle stops moving, based on the counting direction of the target sector.*)
@@ -153,6 +158,7 @@ TYPE
 		PosRelativeTo :  McAcpTrakRoutePosRelToEnum;		      (*Defines whether the end position is calculated relative to the start or end of the sector.*)
 		RouteInfoParameters : McAcpTrakRouteInfoParameters; (*Additional input to GetRouteInfo*)
 		SMP : BOOL; (*Indicates whether symmetric multiprocessing should be used for the execution of the function block.*)
+		SectorTransitionMode : McAcpTrakSectorTransitionEnum; (*The shuttle's transition mode between the reference sector, the route, and the target sector.*)
 	END_STRUCT;
 
 	McAcpTrakAdvMoveCycParType : STRUCT
@@ -682,6 +688,7 @@ TYPE
 		ExtentToFront : LREAL;		   (*Spacing from the midpoint of the magnetic plate up to the front of the shuttle.*)
 		ExtentToBack : LREAL;		   (*Spacing from the midpoint of the magnetic plate up to the back of the shuttle.*)
 		Width : LREAL;			   (*Symmetric width relative to the shuttle center point.*)
+		Shift : LREAL;             (*Shift of the shuttle's width relative to the center point's y axis.*)
 	END_STRUCT;
 
 	McAcpTrakShRouteDestInfoType : STRUCT (*Information about the target of the shuttle's routed movement.*)
@@ -721,6 +728,7 @@ TYPE
 		ExtentToFront : LREAL; (*Spacing from the midpoint of the magnetic plate up to the front of the shuttle.*)
 		ExtentToBack : LREAL;  (*Spacing from the midpoint of the magnetic plate up to the back of the shuttle.*)
 		Width : LREAL;	       (*Symmetric width relative to the shuttle center point.*)
+		Shift : LREAL;         (*Shift of the shuttle's width relative to the center point's y axis.*)
 	END_STRUCT;
 
 	McAcpTrakShSwitchSecInfoType : STRUCT (*Information about a sector position of a shuttle.*)
@@ -1108,7 +1116,7 @@ TYPE
 		mcACPTRAK_SEG_PARID_GET_NO_NCT, (*Read ParID from the segment without network trace entry. If an error occurs while reading, an entry is still created.*)
 		mcACPTRAK_SEG_PARID_GET_NO_LOG (*Read ParID from the segment without NCT and logger entry. If an error occurs while reading, an entry is still created.*)
 	); (*Defines whether a parameter IDs should be read or written (once only).*)
-	
+
 	McAcpTrakDataBlockModeEnum :
 	(
 		mcACPTRAK_DATA_BLOCK_GET,
@@ -1282,6 +1290,102 @@ TYPE
 
 	McAcpTrakAdvRestoreShInfoType : STRUCT (*Additional out parameters for MC_BR_AsmRestoreShData_AcpTrak.*)
 		Status : McAcpTrakAdvRestoreShStatusEnum;
+	END_STRUCT;
+
+	McAcpTrakCyclicShBitsEnum :
+	(
+		mcACPTRAK_CYC_SH_ACTIVE, (*Shuttle exists on the assembly. False if it was deleted.*)
+		mcACPTRAK_CYC_SH_STANDSTILL, (*Shuttle is in state Standstill.*)
+		mcACPTRAK_CYC_SH_INREST, (*Shuttle is in standstill with respect to the setpoint specification.*)
+		mcACPTRAK_CYC_SH_DISABLED, (*Shuttle is in state Disabled.*)
+		mcACPTRAK_CYC_SH_CONTROLLED, (*Shuttle is controlled.*)
+		mcACPTRAK_CYC_SH_VALID, (*Shuttle exists on the assembly and is not being deleted.*)
+		mcACPTRAK_CYC_SH_VIRTUAL, (*Shuttle is virtual.*)
+		mcACPTRAK_CYC_SH_CONVOYMASTER, (*Shuttle is the master shuttle of a convoy.*)
+		mcACPTRAK_CYC_SH_STOPPING, (*Shuttle is in state Stopping.*)
+		mcACPTRAK_CYC_SH_ERRORSTOP, (*Shuttle is in state ErrorStop.*)
+		mcACPTRAK_CYC_SH_ERR_UNSPEC, (*There is an undefined error.*)
+		mcACPTRAK_CYC_SH_ERR_MANEUVER, (*The error was triggered by a standstill maneuver or an emergency stop.*)
+		mcACPTRAK_CYC_SH_ERR_ENCDIFF, (*The difference between two actual segment positions associated to the shuttles is too large.*)
+		mcACPTRAK_CYC_SH_ERR_NOGRIPPER,	(*The shuttle could not allocate a gripper on a segment because all channels are used.*)
+		mcACPTRAK_CYC_SH_ERR_COMMAND, (*The error was triggered by a user command.*)
+		mcACPTRAK_CYC_SH_ERR_SEGMENT, (*The error was triggered by a segment error.*)
+		mcACPTRAK_CYC_SH_ERR_ASSEMBLY, (*The error was triggered as part of an assembly error response.*)
+		mcACPTRAK_CYC_SH_ERR_INVALIDMOVE, (*The error was triggered due to an invalid movement command.*)
+		mcACPTRAK_CYC_SH_ERR_COUPLING, (*The error was triggered by an error on a coupling function block.*)
+		mcACPTRAK_CYC_SH_ERR_CHANNEL (*The error was triggered by a segment error on a single channel. It can be uniquely assigned to a shuttle.*)
+	);
+
+	McAcpTrakCyclicShData : STRUCT (*Cyclic shuttle data*)
+		Axis : McAxisType; (*Reference to the shuttle*)
+		Index : UDINT; (*Index of the shuttle or 0 if the shuttle was not yet in use*)
+		UserState : UDINT; (*State of the shuttle set by user*)
+		UserID : STRING[32]; (*UserID of the shuttle*)
+		PLCopenState : McAxisPLCopenStateEnum; (*Extended PLCopen axis state.*)
+		Bits : DWORD; (*Bit field according to McAcpTrakCyclicShBitsEnum.*)
+		Segment : McSegmentType; (*Reference to the segment on which the shuttle is located*)
+		SegmentPosition : LREAL; (*Position of the shuttle on the segment with the corresponding segment index.*)
+		Sector : McSectorType; (*Reference sector on which the shuttle is located.*)
+		SectorPosition : LREAL;	(*Position of the shuttle in the sector.*)
+	END_STRUCT;
+
+	McAcpTrakCyclicSegBitsEnum : (
+		mcACPTRAK_CYC_SEG_ALL, (*This bit is set for each segment.*)
+		mcACPTRAK_CYC_SEG_COMMREADY, (*The network is initialized and ready for communication.*)
+		mcACPTRAK_CYC_SEG_READYFORPOWER, (*The segment is ready to be enabled.*)
+		mcACPTRAK_CYC_SEG_POWEREDON, (*The power output stage is switched on.*)
+		mcACPTRAK_CYC_SEG_ENABLE, (*Enable input on the segment is active.*)
+		mcACPTRAK_CYC_SEG_MOVE_DETECTED, (*Set to true if a movement was detected on the segment.*)
+		mcACPTRAK_CYC_SEG_ERR_INITIATOR, (*The segment is the initiator of the error reaction.*)
+		mcACPTRAK_CYC_SEG_ERR_NONE, (*No error has been triggered.*)
+		mcACPTRAK_CYC_SEG_ERR_UNSPEC, (*There is an undefined error.*)
+		mcACPTRAK_CYC_SEG_ERR_COMMAND, (*The error was triggered by a user command.*)
+		mcACPTRAK_CYC_SEG_ERR_SEGMENT, (*The error was reported by the segment.*)
+		mcACPTRAK_CYC_SEG_ERR_ASSEMBLY, (*The error was triggered as part of an assembly error reaction.*)
+		mcACPTRAK_CYC_SEG_ERR_CHANNEL, (*The error was triggered by a segment error on a single channel. It can be uniquely assigned to a shuttle.*)
+		mcACPTRAK_CYC_SEG_ERR_ENCDIFF,  (*The error is due to an encoder error.*)
+		mcACPTRAK_CYC_SEG_ERR_UNOBS (*The error is triggered due to an unobservable shuttle.*)
+	);
+
+	McAcpTrakCyclicSegData : STRUCT (*Cyclic segment data*)
+		Segment : McSegmentType; (*Reference to the segment*)
+		SegmentName : STRING[32]; (*Name of the segment*)
+		PLCopenState : McAcpTrakPLCopenStateEnum; (*The segment's PLCopen status*)
+		Bits : DWORD; (*Bit field according to McAcpTrakCyclicSegBitsEnum*)
+	END_STRUCT;
+
+	McAcpTrakArrayType : STRUCT
+		DataAddress : UDINT; (*Address of the first element of the array.*)
+		DataSize    : UDINT; (*Size of the array (sizeof).*)
+		Count       : UDINT; (*Output of the actual number of array elements.*)
+	END_STRUCT;
+
+	McAcpTrakAsmListShSortEnum : (
+		mcACPTRAK_SORT_NONE,
+		mcACPTRAK_SORT_SH_INDEX,
+		mcACPTRAK_SORT_SEG_INDEX,
+		mcACPTRAK_SORT_ASC_POS,
+		mcACPTRAK_SORT_DESC_POS
+	);
+
+	McAcpTrakAsmListShOptSecParType  : STRUCT
+ 		Sector : REFERENCE TO McSectorType; (*Reference to the sector.*)
+		Positions : McAcpTrakArrayType; (*Array of positions of type LREAL.*)
+		StartPosition : LREAL; (*Start position of the sector position interval for search.*)
+		EndPosition : LREAL; (*End position of the sector position interval for search.*)
+		AllowDuplicates : BOOL; (*Allow duplicates in the output array.*)
+		OnlyCount: BOOL; (*Only compute the number of shuttles on the sector.*)
+	END_STRUCT;
+
+	McAcpTrakAsmListShAdvParType : STRUCT
+		Sector :  McAcpTrakAsmListShOptSecParType; (*Sector parameters*)
+		SegmentGroup : STRING[32]; (*Segment group name specifying a set of segments of the assembly.*)
+		SelectionBits : DWORD; (*Bit field to list shuttles with certain properties*)
+		Sorting : McAcpTrakAsmListShSortEnum; (*Sorting of the shuttles*)
+	END_STRUCT;
+
+	McAcpTrakAsmListShInfoType : STRUCT
+		Count : UDINT; (*Number of shuttles on the selected component*)
 	END_STRUCT;
 
 END_TYPE

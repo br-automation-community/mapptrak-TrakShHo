@@ -41,6 +41,7 @@
     </Connector>
     <Parameter ID="ConfigurationID" Value="Demo_APC" />
     <Parameter ID="Simulation" Value="1" />
+    <Parameter ID="MotionLoggerSize" Value="2048000" />
     <Parameter ID="TimerDeviceType" Value="EPLX2X" />
     <Parameter ID="TimerDevice" Value="5LS182.6-2.IF1" />
     <Parameter ID="TaskClassIdleTime" Value="800" />

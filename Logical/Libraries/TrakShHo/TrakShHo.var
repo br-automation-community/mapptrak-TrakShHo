@@ -13,5 +13,10 @@ VAR CONSTANT
 	tshRECOVERY_CHECK_TIME : TIME := T#500ms; (*Time, the shuttle must be in standstill in front of the barrier in order to check, if the shuttle is able to pass or not*)
 	tshDISTANCE_SEG_END : LREAL := 0.03; (*Distance the shuttle center point should be away from the segment end (Needed to prevent asymmetric load on the segment and have a better handover)*)
 	tshLOGBOOK_DEFAULT_SIZE : UDINT := 200*1024; (*Default size for a userdefined logbook, if it has to be created (200kB = 200 * 1024B)*)
-	tshAUTO_PAUSE_SYSTEM_OFFSET : SINT := -1; (*Offset for the allowed number of shuttles for the auto pause functionality. Due to the behavior a sytem offset is applied*)
+	tshAUTO_PAUSE_SYSTEM_OFFSET : SINT := -1; (*Offset for the allowed number of shuttles for the auto pause functionality. Due to the behavior a system offset is applied*)
+	tshDATA_QUEUE_SIZE : USINT := 10; (*Number of userdata records, which the AsmReceive can buffer (FIFO). If the queue is full, the oldest record is dropped*)
+	tshUSERDATA_MAX_SIZE : UINT := 256; (*Maximum size of one userdata record in byte. Each record of the queue reserves this size*)
+	tshDATA_QUEUE_SIZE_MIN1 : USINT := tshDATA_QUEUE_SIZE - 1; (*Last index of the userdata queue*)
+	tshUSERDATA_MAX_SIZE_MIN1 : UINT := tshUSERDATA_MAX_SIZE - 1; (*Last index of one userdata record*)
+	tshDATA_QUEUE_BUFFER_SIZE_MIN1 : UINT := 2559; (*Last index of the queue buffer = tshDATA_QUEUE_SIZE * tshUSERDATA_MAX_SIZE - 1, keep in sync*)
 END_VAR

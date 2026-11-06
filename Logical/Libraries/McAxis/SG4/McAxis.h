@@ -1,6 +1,6 @@
 /* Automation Studio generated header file */
 /* Do not edit ! */
-/* McAxis 6.8.0 */
+/* McAxis 6.9.2 */
 
 #ifndef _MCAXIS_
 #define _MCAXIS_
@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 #ifndef _McAxis_VERSION
-#define _McAxis_VERSION 6.8.0
+#define _McAxis_VERSION 6.9.2
 #endif
 
 #include <bur/plctypes.h>
@@ -818,6 +818,7 @@ typedef struct McAdvVelCtrlParType
 {	float Acceleration;
 	float Deceleration;
 	float Jerk;
+	enum McAltValueSrcEnum AlternativeValueSource;
 } McAdvVelCtrlParType;
 
 typedef struct McAdvShiftDistanceParType
